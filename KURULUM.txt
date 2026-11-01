@@ -47,3 +47,15 @@ KAŞ NAKLİYAT — SUNUCUYA YÜKLEME
 Bu paket canlı müşteri verisi, yönetici parolası, API anahtarı veya
 yerel geliştirme veritabanı içermez. İlk yönetici hesabını kendi
 sunucunuzda siz oluşturursunuz. Ayrıntılar README.md dosyasındadır.
+
+8. UZAK MASAÜSTÜ VE VS CODE
+   Başka bir bilgisayarda geliştirmek için:
+   git clone https://github.com/FikirProje/kasnakliyat.git
+   cd kasnakliyat
+   cp .env.example .env
+   php bin/console.php migrate
+   php bin/console.php check
+   Windows'ta VS Code + Remote - SSH eklentisiyle uzak proje klasörünü açın.
+   Her başlanıçta git pull --ff-only, geliştirme sonunda testlerden sonra
+   git push origin main kullanın. .env, storage/, yedekler, veritabanı ve
+   API/SMTP anahtarları Git'e eklenmez.

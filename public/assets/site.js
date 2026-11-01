@@ -29,3 +29,41 @@ document.querySelectorAll('[data-map-url]').forEach(button => {
     button.disabled = true;
   });
 });
+const galleryDialog = document.querySelector('[data-gallery-dialog]');
+const galleryImage = galleryDialog?.querySelector('[data-gallery-image]');
+const galleryCaption = galleryDialog?.querySelector('[data-gallery-caption]');
+function galleryOpen(button) {
+  if (!galleryDialog || !galleryImage || !galleryCaption) return;
+  galleryImage.src = button.dataset.src || '';
+  galleryImage.alt = button.dataset.alt || '';
+  galleryCaption.textContent = button.dataset.caption || button.dataset.alt || '';
+  galleryDialog.showModal();
+}
+document.addEventListener('click', event => {
+  const opener = event.target.closest('[data-gallery-open]');
+  if (opener) galleryOpen(opener);
+  if (event.target.closest('[data-gallery-close]')) galleryDialog?.close();
+  if (event.target === galleryDialog) galleryDialog.close();
+});
+const galleryGrid = document.querySelector('[data-gallery-grid]');
+const galleryMore = document.querySelector('[data-gallery-more]');
+if (galleryGrid && galleryMore) {
+  galleryMore.addEventListener('click', async () => {
+    const offset = Number(galleryGrid.dataset.offset || '0');
+    galleryMore.disabled = true;
+    try {
+      const response = await fetch(`/api/gallery?lang=${encodeURIComponent(galleryGrid.dataset.lang || 'tr')}&offset=${offset}`, {headers:{Accept:'application/json'}});
+      if (!response.ok) throw new Error('gallery');
+      const data = await response.json();
+      for (const item of data.items || []) {
+        const button = document.createElement('button'); button.type = 'button'; button.className = 'gallery-card'; button.dataset.galleryOpen = ''; button.dataset.src = item.src; button.dataset.alt = item.alt || ''; button.dataset.caption = item.caption || '';
+        const image = document.createElement('img'); image.src = item.src; image.alt = item.alt || ''; image.width = item.width; image.height = item.height; image.loading = 'lazy'; button.append(image);
+        if (item.caption) { const caption = document.createElement('span'); caption.textContent = item.caption; button.append(caption); }
+        galleryGrid.append(button);
+      }
+      galleryGrid.dataset.offset = String(data.next_offset || offset + (data.items || []).length);
+      if (data.next_offset === null || !data.items?.length) galleryMore.hidden = true;
+    } catch (_) { galleryMore.hidden = true; }
+    finally { galleryMore.disabled = false; }
+  });
+}

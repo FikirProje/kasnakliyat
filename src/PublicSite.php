@@ -40,10 +40,25 @@ function public_published(string $lang, ?string $slug = null): array {
     if ($slug !== null) { $sql .= ' AND t.slug=?'; $args[] = $slug; }
     return rows($sql . ' ORDER BY t.updated_at DESC', $args);
 }
+function gallery_labels(string $lang): array {
+    $labels=['tr'=>['Galeri','Araç, ofis ve çalışma anları','Daha fazla görsel yükle'], 'en'=>['Gallery','Vehicles, office and work moments','Load more images'], 'de'=>['Galerie','Fahrzeuge, Büro und Arbeitsmomente','Mehr Bilder laden'], 'fr'=>['Galerie','Véhicules, bureau et moments de travail','Charger plus d’images'], 'es'=>['Galería','Vehículos, oficina y momentos de trabajo','Cargar más imágenes'], 'it'=>['Galleria','Veicoli, ufficio e momenti di lavoro','Carica altre immagini'], 'pt'=>['Galeria','Veículos, escritório e momentos de trabalho','Carregar mais imagens'], 'nl'=>['Galerij','Voertuigen, kantoor en werkmomenten','Meer afbeeldingen laden'], 'ru'=>['Галерея','Автомобили, офис и рабочие моменты','Загрузить ещё'], 'ar'=>['المعرض','المركبات والمكتب ولحظات العمل','تحميل المزيد'], 'zh'=>['图库','车辆、办公室与工作场景','加载更多图片'], 'ja'=>['ギャラリー','車両・オフィス・作業風景','さらに読み込む'], 'ko'=>['갤러리','차량, 사무실 및 작업 현장','더 보기'], 'fa'=>['گالری','خودروها، دفتر و لحظه‌های کار','بارگذاری تصاویر بیشتر']];
+    return $labels[$lang] ?? $labels['tr'];
+}
+function public_gallery_items(string $lang, int $offset = 0, int $limit = 12): array {
+    $limit=max(1,min($limit,24)); $offset=max(0,min($offset,10000));
+    return rows("SELECT g.id,g.sort_order,m.id AS media_id,m.width,m.height,COALESCE(mt.alt,tr.alt,'') AS alt,COALESCE(mt.caption,tr.caption,'') AS caption FROM gallery_items g JOIN media m ON m.id=g.media_id LEFT JOIN media_translations mt ON mt.media_id=m.id AND mt.lang=? LEFT JOIN media_translations tr ON tr.media_id=m.id AND tr.lang='tr' WHERE g.status='published' AND m.purpose='library' AND NOT EXISTS(SELECT 1 FROM request_media r WHERE r.media_id=m.id) ORDER BY g.sort_order DESC,g.id DESC LIMIT ? OFFSET ?",[$lang,$limit,$offset]);
+}
+function public_gallery_json(string $lang): never {
+    $offset=filter_input(INPUT_GET,'offset',FILTER_VALIDATE_INT,['options'=>['default'=>0,'min_range'=>0]]) ?? 0;
+    $items=public_gallery_items($lang,$offset,12);
+    $payload=['items'=>array_map(static fn($item)=>['id'=>(int)$item['id'],'src'=>'/media/'.(int)$item['media_id'].'?variant=webp','alt'=>(string)$item['alt'],'caption'=>(string)$item['caption'],'width'=>(int)$item['width'],'height'=>(int)$item['height']],$items),'next_offset'=>count($items)===12?$offset+12:null];
+    header('Content-Type: application/json; charset=utf-8'); header('Cache-Control: public, max-age=300');
+    echo json_encode($payload,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES); exit;
+}
 function public_routes_for_sitemap(): array {
     $routes = [];
     foreach (array_keys(locales()) as $lang) {
-        foreach ([''=>'home','hizmetler/yuk-tasimaciligi/'=>'service','blog/'=>'blog','teklif-al/'=>'quote','randevu/'=>'appointment','gizlilik/'=>'privacy'] as $tail=>$group) {
+        foreach ([''=>'home','hizmetler/yuk-tasimaciligi/'=>'service','blog/'=>'blog','galeri/'=>'gallery','teklif-al/'=>'quote','randevu/'=>'appointment','gizlilik/'=>'privacy'] as $tail=>$group) {
             if ($group==='service' && row('SELECT t.id FROM translations t JOIN articles a ON a.id=t.article_id WHERE t.lang=? AND t.slug=? AND a.kind=? AND '.public_visible_sql(),[$lang,'yuk-tasimaciligi','service'])) continue;
             $routes[] = ['path'=>"/$lang/$tail",'lang'=>$lang,'group'=>$group];
         }
@@ -103,6 +118,7 @@ function handle_public(string $path): void {
     $lang=$matches[1]; $tail=trim($matches[2] ?? '','/'); $page='home'; $article=null; $errors=[];
     $root='/'.$lang.'/';
     if ($tail==='blog') $page='blog';
+    elseif ($tail==='galeri') $page='gallery';
     elseif ($tail==='teklif-al') $page='quote';
     elseif ($tail==='randevu') $page='appointment';
     elseif ($tail==='gizlilik') $page='privacy';
@@ -129,10 +145,11 @@ function handle_public(string $path): void {
         $errors=public_request($lang,$page==='quote'?'quote':'appointment');
         if ($errors) http_response_code(422);
     }
+    $galleryLabels=gallery_labels($lang);
     $titleKeys=['home'=>'hero_title','service'=>'service_title','blog'=>'blog_title','quote'=>'quote_title','appointment'=>'appointment_title','privacy'=>'privacy_title','404'=>'not_found'];
-    $title=$article ? ($article['seo_title'] ?: $article['title']) : ($page==='home' ? (setting('homepage_title_'.$lang) ?: t('hero_title',$lang)) : t($titleKeys[$page] ?? 'hero_title',$lang));
+    $title=$article ? ($article['seo_title'] ?: $article['title']) : ($page==='gallery' ? $galleryLabels[0] : ($page==='home' ? (setting('homepage_title_'.$lang) ?: t('hero_title',$lang)) : t($titleKeys[$page] ?? 'hero_title',$lang)));
     $descriptionKeys=['home'=>'hero_text','service'=>'service_intro','blog'=>'blog_intro','quote'=>'quote_intro','appointment'=>'appointment_intro','privacy'=>'privacy_text','404'=>'not_found_text'];
-    $description=$article ? ($article['seo_description'] ?: $article['excerpt']) : ($page==='home' ? (setting('homepage_intro_'.$lang) ?: t('hero_text',$lang)) : t($descriptionKeys[$page] ?? 'hero_text',$lang));
+    $description=$article ? ($article['seo_description'] ?: $article['excerpt']) : ($page==='gallery' ? $galleryLabels[1] : ($page==='home' ? (setting('homepage_intro_'.$lang) ?: t('hero_text',$lang)) : t($descriptionKeys[$page] ?? 'hero_text',$lang)));
     $heroTitle=$page==='home' ? (setting('homepage_title_'.$lang) ?: t('hero_title',$lang)) : $title;
     if ($page==='home') {
         $title=setting('homepage_seo_title_'.$lang) ?: $title;
@@ -151,6 +168,7 @@ function handle_public(string $path): void {
     if ($page==='blog' && $category!=='') $articles=array_values(array_filter($articles,static fn($item)=>$item['category']===$category));
     $services=array_values(array_filter(public_published($lang),static fn($item)=>$item['kind']==='service'));
     $pages=array_values(array_filter(public_published($lang),static fn($item)=>$item['kind']==='page'));
+    $galleryItems=$page==='gallery'||$page==='home'?public_gallery_items($lang,0,$page==='home'?6:12):[];
     $coverAlt=$article && !empty($article['cover_media_id']) ? (row('SELECT alt FROM media_translations WHERE media_id=? AND lang=?',[$article['cover_media_id'],$lang])['alt'] ?? '') : '';
     $ogImage=$article && !empty($article['cover_media_id']) ? base_url('/media/'.$article['cover_media_id'].'?variant=webp') : base_url('/assets/share-card.png');
     $flashes=take_flash();

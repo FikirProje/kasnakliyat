@@ -29,7 +29,7 @@ try {
     if (lang === 'tr') await page.screenshot({ path: '/tmp/kas-desktop.png', fullPage: true });
   }
   const langs = ['tr', 'en', 'de', 'fr', 'es', 'it', 'pt', 'nl', 'ru', 'ar', 'zh', 'ja', 'ko', 'fa'];
-  const paths = ['', 'teklif-al/', 'randevu/', 'gizlilik/', 'blog/', 'hizmetler/yuk-tasimaciligi/'];
+  const paths = ['', 'teklif-al/', 'randevu/', 'gizlilik/', 'blog/', 'galeri/', 'hizmetler/yuk-tasimaciligi/'];
   for (const width of [390, 375, 320, 768, 1024, 1440]) {
     await page.setViewportSize({ width, height: 844 });
     for (const lang of (width <= 390 ? langs : ['tr', 'en', 'de', 'ar', 'fa'])) {

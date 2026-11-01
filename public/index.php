@@ -17,6 +17,11 @@ try {
         header('Content-Type: application/json'); header('Cache-Control: no-store');
         echo json_encode(['status' => 'ok', 'database' => query('SELECT 1')->fetchColumn() == 1]); exit;
     }
+    if (preg_match('#^/api/gallery/?$#',$path)) {
+        $lang=is_string($_GET['lang'] ?? null) ? $_GET['lang'] : 'tr';
+        if (!isset(locales()[$lang])) render_error(404, 'Sayfa bulunamadı.');
+        public_gallery_json($lang);
+    }
     if ($path === '/robots.txt') {
         header('Content-Type: text/plain; charset=utf-8');
         if (envv('APP_ENV', 'development') !== 'production') echo "User-agent: *\nDisallow: /\n";
@@ -43,7 +48,7 @@ try {
         if (!$media) render_error(404, 'Görsel bulunamadı.');
         $private = $media['purpose'] === 'customer' || (bool)row('SELECT media_id FROM request_media WHERE media_id=?', [$media['id']]);
         if ($private) require_role(['admin','operator']);
-        elseif (!row("SELECT id FROM translations WHERE cover_media_id=? AND status='published' AND (scheduled_at IS NULL OR scheduled_at='' OR scheduled_at<=datetime('now'))", [$media['id']])) require_role(['admin','editor']);
+        elseif (!row("SELECT id FROM translations WHERE cover_media_id=? AND status='published' AND (scheduled_at IS NULL OR scheduled_at='' OR scheduled_at<=datetime('now'))", [$media['id']]) && !row("SELECT id FROM gallery_items WHERE media_id=? AND status='published'",[$media['id']])) require_role(['admin','editor']);
         $variant = $_GET['variant'] ?? 'webp';
         if (!is_string($variant) || !in_array($variant, ['original', 'webp', 'avif'], true)) render_error(400, 'Geçersiz görsel biçimi.');
         try { $file = media_path($media, $variant); } catch (RuntimeException $error) { render_error(404, 'Görsel bulunamadı.'); }

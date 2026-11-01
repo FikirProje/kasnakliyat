@@ -28,13 +28,14 @@ Bu görev zaten yalıtılmıştır. Mevcut checkout'u kullanın; kullanıcı öz
 ## Kullanım
 
 - `/tr/`: gerçek teklif formu içeren One Page ana sayfa. Türkçe, İngilizce, Almanca, Fransızca, İspanyolca, İtalyanca, Portekizce, Hollandaca, Rusça, Arapça, Çince, Japonca, Korece ve Farsça arayüz. Arapça/Farsça RTL.
-- `/{dil}/hizmetler/yuk-tasimaciligi/`, `/{dil}/blog/`, `/{dil}/teklif-al/`, `/{dil}/randevu/`, `/{dil}/gizlilik/`.
+- `/{dil}/hizmetler/yuk-tasimaciligi/`, `/{dil}/blog/`, `/{dil}/galeri/`, `/{dil}/teklif-al/`, `/{dil}/randevu/`, `/{dil}/gizlilik/`.
 - Blog yazıları `/{dil}/blog/{slug}/`, ek hizmetler `/{dil}/hizmetler/{slug}/`, ek sayfalar `/{dil}/sayfa/{slug}/`.
 - `/admin/login`: yönetim merkezi. `admin` tüm modülleri; `editor` içerik, medya, SEO ve AI işlerini; `operator` müşteri talepleri ve randevuları yönetir.
 - Teklifler/randevular önce **Yeni talep** olarak kaydedilir. İdareci fiyat/tarih önerebilir, randevuyu kesinleştirebilir veya reddedebilir. Aynı tarih ve saatte iki randevu kesinleşmez. Bu ilk sürüm tek eşzamanlı randevu kapasitesi kullanır; araç/ekip bazlı süre ve kapasite planlaması yoktur.
 - İçerik stüdyosunda içerik türü/kaynak dili oluşturun, her dilde metin/slug/SEO/kapak/yayın durumunu ayrı kaydedin. Diğer dillere metin kopyalanmaz. Yayın tarihleri İstanbul saatinde girilir, UTC saklanır. Yayın zamanı gelen içerik sonraki istekte görünür.
 - AI işleri sonuçları ayrı tutulur. İş tamamlanınca editör çıktıyı inceler, açıkça **Taslağa al** ile uygular ve dil editöründe yayınlar. Kaynak güncellemesinde diğer dillerin metinleri korunur; kaynak sürümü uyarısı gösterilir. Eşzamanlı eski editör kaydı reddedilir.
 - Fotoğraflar 8 MB/16 megapiksel sınırı ve gerçek MIME/decode kontrolünden geçer. Orijinal, WebP ve desteklenirse AVIF saklanır. Müşteri ekleri herkese açık medya kütüphanesinden ayrılır; yalnız yönetici/operatör erişir. Başlık/alt metin/açıklama her dilde ayrı tutulur.
+- Galeri, medya kütüphanesine yüklenen gerçek araç, ofis ve çalışma görsellerinden yönetilir. Editör/yönetici her görseli ayrı ayrı taslakta tutar veya yayımlar, yayın sırasını belirler ve her dil için alt metin/açıklama girer. Ziyaretçi galerisi sayfa sayfa AJAX ile ek görseller yükler; başlangıçta örnek veya yapay iş fotoğrafı bulunmaz.
 - Müşteri bildirimleri SMTP kuyruğuna alınır. Başarısız işler ve denemeler görünür, açık yeniden deneme yeni kayıt oluşturur. Kuyruk çalıştırılmadan e-posta gönderilmiş sayılmaz.
 
 ## AI ve e-posta
@@ -59,6 +60,23 @@ Bulut ağında `api.openai.com` için HTTPS izni ve API anahtarı, SMTP için sa
 
 Google Search Console, GA4 ve Google Business Profile hesap bağlama/doğrulaması yapılmadı. Arama sıralaması veya zengin sonuç garantisi verilmez. Otomatik analitik/çerez yüklenmez.
 
+## Uzak masaüstü / VS Code ile geliştirme
+
+Uzak Windows masaüstü, Linux sunucu veya VS Code Remote SSH kullanırken aynı Git deposunu kullanın. Tek seferlik akış:
+
+```sh
+git clone https://github.com/FikirProje/kasnakliyat.git
+cd kasnakliyat
+cp .env.example .env
+# APP_URL, APP_ENV ve gerekiyorsa INSTALL_TOKEN değerlerini yalnız bu sunucuda düzenleyin.
+php bin/console.php migrate
+php bin/console.php check
+```
+
+Windows için [VS Code](https://code.visualstudio.com/) ve **Remote - SSH** eklentisini kurun; uzak bilgisayarda projeyi açın. Uzak Linux sunucuda PHP, SQLite, GD/WebP, cURL, OpenSSL, mbstring, fileinfo ve zlib etkin olmalıdır. Yerel geliştirme için `php -S 127.0.0.1:8080 -t public public/index.php` yeterlidir; canlı sistemde `public/` web kökü olan HTTPS web sunucusu kullanın.
+
+Her çalışma başlangıcında `git pull --ff-only` çalıştırın; değişiklikten önce `git status`, doğrulamadan sonra testler ve `git push origin main` kullanın. `.env`, `storage/`, yedekler ve API/SMTP sırları Git’e eklenmez. Aynı veritabanını iki ayrı bilgisayarda eşzamanlı düzenlemeyin; ortak canlı veritabanı gerekiyorsa önceden yedek alın ve tek bakım penceresi belirleyin.
+
 Üretimde PHP geliştirme sunucusunu kullanmayın. Web kökü **yalnız `public/`** olmalı. SQLite ve medya web kökünün dışındaki `storage/` dizininde kalır. Örnek Nginx yapılandırması: `docs/nginx.conf`. PHP süreç sahibine `storage/` yazma, uygulama koduna okuma yetkisi verin. `.env` dosyasını yalnız uygulama sahibinin okuyabildiğinden emin olun. HTTPS sonlandırması ve FPM ayrı sunucu kurulumu gerektirir.
 
 ## Yedekleme ve geri yükleme
@@ -81,6 +99,7 @@ PHP_BIN=php python3 tests/smoke.py
 php tests/integrations.php
 PHP_BIN=php python3 tests/smtp_smoke.py
 PHP_BIN=php python3 tests/installer_smoke.py
+PHP_BIN=php python3 tests/gallery_smoke.py
 PHP_BIN=php python3 tests/restore_smoke.py
 ```
 

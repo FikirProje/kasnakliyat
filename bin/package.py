@@ -2,6 +2,7 @@
 """Create an allowlisted deployment ZIP; never include runtime data or credentials."""
 import argparse
 from pathlib import Path
+import stat
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -19,7 +20,12 @@ for name in roots:
 args.output.parent.mkdir(parents=True, exist_ok=True)
 with zipfile.ZipFile(args.output, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
     for path in sorted(files):
-        archive.write(path, str(path.relative_to(ROOT)))
+        info = zipfile.ZipInfo.from_file(path, str(path.relative_to(ROOT)))
+        # Upload archives should be readable by the web server even if the
+        # development workspace uses owner-only source-file permissions.
+        mode = 0o755 if path.stat().st_mode & stat.S_IXUSR else 0o644
+        info.external_attr = (stat.S_IFREG | mode) << 16
+        archive.writestr(info, path.read_bytes(), compress_type=zipfile.ZIP_DEFLATED, compresslevel=9)
 with zipfile.ZipFile(args.output) as archive:
     assert archive.testzip() is None
     for name in archive.namelist():

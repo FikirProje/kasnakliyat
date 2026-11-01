@@ -60,11 +60,22 @@ function migrate_extensions(): void {
     migrate_media_purpose();
 }
 function migrate_media_purpose(): void {
-    if (row('SELECT version FROM migrations WHERE version=3')) return;
+    if (row('SELECT version FROM migrations WHERE version=3')) { migrate_gallery(); return; }
     db()->beginTransaction();
     try {
         db()->exec("ALTER TABLE media ADD COLUMN purpose TEXT NOT NULL DEFAULT 'customer' CHECK(purpose IN ('customer','library'))");
         query('INSERT INTO migrations(version,applied_at) VALUES(3,datetime(\'now\'))');
+        db()->commit();
+    } catch (Throwable $error) { if (db()->inTransaction()) db()->rollBack(); throw $error; }
+    migrate_gallery();
+}
+function migrate_gallery(): void {
+    if (row('SELECT version FROM migrations WHERE version=4')) return;
+    db()->beginTransaction();
+    try {
+        db()->exec("CREATE TABLE gallery_items(id INTEGER PRIMARY KEY,media_id INTEGER NOT NULL UNIQUE REFERENCES media(id) ON DELETE CASCADE,status TEXT NOT NULL DEFAULT 'draft' CHECK(status IN ('draft','published')),sort_order INTEGER NOT NULL DEFAULT 0,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)");
+        db()->exec('CREATE INDEX gallery_visible ON gallery_items(status,sort_order DESC,id DESC)');
+        query('INSERT INTO migrations(version,applied_at) VALUES(4,datetime(\'now\'))');
         db()->commit();
     } catch (Throwable $error) { if (db()->inTransaction()) db()->rollBack(); throw $error; }
 }

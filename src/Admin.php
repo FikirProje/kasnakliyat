@@ -5,7 +5,7 @@ function admin_roles(string $section): array
 {
     return match ($section) {
         'settings', 'users', 'audit', 'backup', 'mail' => ['admin'],
-        'content', 'editor', 'media', 'seo', 'jobs' => ['admin', 'editor'],
+        'content', 'editor', 'media', 'gallery', 'seo', 'jobs' => ['admin', 'editor'],
         'requests', 'appointments' => ['admin', 'operator'],
         default => ['admin', 'editor', 'operator'],
     };
@@ -188,7 +188,7 @@ function handle_admin(string $path): void
     $section = trim(substr($path, strlen('/admin')), '/') ?: 'dashboard';
     if ($section === 'login') { admin_login_page(); return; }
     $user = require_login();
-    if (!in_array($section, ['dashboard','logout','requests','appointments','content','editor','media','seo','settings','users','jobs','audit','backup','mail'], true)) { http_response_code(404); admin_layout('Bulunamadı','dashboard',$user,'<div class="panel">Bu sayfa bulunamadı.</div>'); return; }
+    if (!in_array($section, ['dashboard','logout','requests','appointments','content','editor','media','gallery','seo','settings','users','jobs','audit','backup','mail'], true)) { http_response_code(404); admin_layout('Bulunamadı','dashboard',$user,'<div class="panel">Bu sayfa bulunamadı.</div>'); return; }
     require_role(admin_roles($section));
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         csrf_verify();
@@ -201,11 +201,11 @@ function handle_admin(string $path): void
         redirect($destination);
     }
     if ($section === 'logout') { http_response_code(405); header('Allow: POST'); return; }
-    $titles=['dashboard'=>'Genel bakış','requests'=>'Teklif talepleri','appointments'=>'Randevu takvimi','content'=>'İçerik stüdyosu','editor'=>'Dil editörü','media'=>'Görsel kütüphanesi','seo'=>'SEO merkezi','settings'=>'İşletme ve entegrasyonlar','users'=>'Kullanıcılar','jobs'=>'Yapay zekâ işleri','audit'=>'İşlem kayıtları','backup'=>'Yedekleme','mail'=>'E-posta kuyruğu'];
+    $titles=['dashboard'=>'Genel bakış','requests'=>'Teklif talepleri','appointments'=>'Randevu takvimi','content'=>'İçerik stüdyosu','editor'=>'Dil editörü','media'=>'Görsel kütüphanesi','gallery'=>'Galeri','seo'=>'SEO merkezi','settings'=>'İşletme ve entegrasyonlar','users'=>'Kullanıcılar','jobs'=>'Yapay zekâ işleri','audit'=>'İşlem kayıtları','backup'=>'Yedekleme','mail'=>'E-posta kuyruğu'];
     ob_start();
     match($section) {
         'requests','appointments' => admin_requests_page($section),
-        'content' => admin_content_page(), 'editor'=>admin_editor_page(), 'media'=>admin_media_page(), 'seo'=>admin_seo_page(),
+        'content' => admin_content_page(), 'editor'=>admin_editor_page(), 'media'=>admin_media_page(), 'gallery'=>admin_gallery_page(), 'seo'=>admin_seo_page(),
         'settings'=>admin_settings_page(), 'users'=>admin_users_page(), 'jobs'=>admin_jobs_page(), 'audit'=>admin_audit_page(),
         'backup'=>admin_backup_page(), 'mail'=>admin_mail_page(), default=>admin_dashboard($user),
     };
@@ -256,6 +256,13 @@ function admin_post(string $section, array $user): void
         query('INSERT INTO media_translations(media_id,lang,title,alt,caption) VALUES(?,?,?,?,?) ON CONFLICT(media_id,lang) DO UPDATE SET title=excluded.title,alt=excluded.alt,caption=excluded.caption',[$id,$lang,admin_input('title',180),admin_input('alt',500),admin_input('caption',1000)]);
         audit('media.metadata','#'.$id.' '.$lang); flash('success','Dil metinleri kaydedildi.'); return;
     }
+    if ($section === 'gallery' && $action === 'gallery') {
+        $mediaId=(int)($_POST['media_id'] ?? 0); $status=admin_input('status',20); $order=(int)($_POST['sort_order'] ?? 0);
+        if (!in_array($status,['draft','published'],true) || $order < -100000 || $order > 100000) throw new InvalidArgumentException('Galeri durumu veya sırası geçersiz.');
+        if (!row("SELECT id FROM media WHERE id=? AND purpose='library' AND NOT EXISTS(SELECT 1 FROM request_media r WHERE r.media_id=media.id)",[$mediaId])) throw new InvalidArgumentException('Yalnızca gerçek, kütüphanedeki görseller galeriye eklenebilir.');
+        query("INSERT INTO gallery_items(media_id,status,sort_order,updated_at) VALUES(?,?,?,datetime('now')) ON CONFLICT(media_id) DO UPDATE SET status=excluded.status,sort_order=excluded.sort_order,updated_at=excluded.updated_at",[$mediaId,$status,$order]);
+        audit('gallery.saved','#'.$mediaId.' '.$status); flash('success','Galeri kaydı güncellendi.'); return;
+    }
     if ($section === 'settings' && $action === 'settings') {
         $keys=['business_name','contact_phone','contact_email','whatsapp','address','site_description','ai_provider','ai_model','mail_from','smtp_host','smtp_port','smtp_user'];
         foreach ($keys as $key) {
@@ -302,7 +309,7 @@ function admin_login_page(): void
 
 function admin_layout(string $title,string $section,array $user,string $body): void
 {
-    $nav=['dashboard'=>['◫','Genel bakış'],'requests'=>['↗','Teklif talepleri'],'appointments'=>['▦','Randevular'],'content'=>['▤','İçerik stüdyosu'],'jobs'=>['✧','Yapay zekâ işleri'],'media'=>['▧','Görsel kütüphanesi'],'seo'=>['◎','SEO merkezi'],'mail'=>['✉','E-posta kuyruğu'],'settings'=>['⚙','Ayarlar'],'users'=>['♙','Kullanıcılar'],'backup'=>['↓','Yedekleme'],'audit'=>['≡','İşlem kayıtları']];
+    $nav=['dashboard'=>['◫','Genel bakış'],'requests'=>['↗','Teklif talepleri'],'appointments'=>['▦','Randevular'],'content'=>['▤','İçerik stüdyosu'],'jobs'=>['✧','Yapay zekâ işleri'],'media'=>['▧','Görsel kütüphanesi'],'gallery'=>['▦','Galeri'],'seo'=>['◎','SEO merkezi'],'mail'=>['✉','E-posta kuyruğu'],'settings'=>['⚙','Ayarlar'],'users'=>['♙','Kullanıcılar'],'backup'=>['↓','Yedekleme'],'audit'=>['≡','İşlem kayıtları']];
     ?><!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title><?= e($title) ?> · Kaş Nakliyat</title><link rel="stylesheet" href="/assets/admin.css"></head><body><a href="#main" class="skip">İçeriğe geç</a><aside class="sidebar"><a class="brand" href="/admin">KAŞ<span>NAKLİYAT</span></a><span class="sidebar-caption">YÖNETİM MERKEZİ</span><nav aria-label="Yönetim"><?php foreach($nav as $key=>[$icon,$label]): if(!admin_allowed($key,$user))continue; ?><a class="<?= ($section===$key || ($section==='editor'&&$key==='content'))?'active':'' ?>" href="/admin<?= $key==='dashboard'?'':'/'.$key ?>"><span aria-hidden="true"><?= $icon ?></span><?= e($label) ?></a><?php endforeach ?></nav><div class="sidebar-bottom"><a href="/tr/">Web sitesini aç ↗</a><p><?= e($user['name']) ?><small><?= e($user['role']) ?></small></p><form method="post" action="/admin/logout"><?= csrf_field() ?><button class="logout" type="submit">Oturumu kapat</button></form></div></aside><div class="workspace"><header class="topbar"><span>Kaş Nakliyat <span class="crumb">/ <?= e($title) ?></span></span><span class="topbar-right">TR <span class="avatar"><?= e(mb_substr($user['name'],0,1)) ?></span></span></header><main id="main" class="main"><div class="page-heading"><div><p class="eyebrow">ÇALIŞMA ALANINIZ</p><h1><?= e($title) ?></h1></div><time datetime="<?= date('Y-m-d') ?>"><?= date('d.m.Y') ?></time></div><?php foreach(take_flash() as $flash): ?><p class="notice <?= e($flash['kind']) ?>" role="status"><?= e($flash['message']) ?></p><?php endforeach ?><?= $body ?></main><footer class="admin-footer">Kaş Nakliyat · Bağımsız yönetim platformu <span>Europe/Istanbul</span></footer></div></body></html><?php
 }
 
@@ -349,6 +356,12 @@ function admin_editor_page(): void
 function admin_media_page(): void
 {
     ?><section class="panel"><h2>Görsel yükleyin</h2><p class="muted">Yalnızca kullanım hakkına sahip olduğunuz gerçek materyalleri ekleyin. Orijinaller korunur.</p><form method="post" enctype="multipart/form-data" class="inline-form"><?php admin_action('upload') ?><label>Dosya<input type="file" name="photo" accept="image/jpeg,image/png,image/webp,image/avif" required></label><?php admin_select('Başlangıç dili','lang',locales(),'tr') ?><button>Yükle</button></form></section><?php $items=rows("SELECT * FROM media WHERE purpose='library' AND NOT EXISTS(SELECT 1 FROM request_media r WHERE r.media_id=media.id) ORDER BY id DESC LIMIT 100"); if(!$items){admin_empty('Görsel kütüphaneniz hazır.','İlk görselinizi yükleyerek her dilde alt metin ve açıklama ekleyebilirsiniz.'); return;} $lang=admin_lang(); ?><form method="get" class="language-filter"><?php admin_select('Metin dili','lang',locales(),$lang) ?><button class="secondary">Dili aç</button></form><div class="media-grid"><?php foreach($items as $item): $meta=row('SELECT * FROM media_translations WHERE media_id=? AND lang=?',[$item['id'],$lang])??[]; ?><article class="panel media-card"><img src="/media/<?= (int)$item['id'] ?>" alt="<?= e($meta['alt']??'') ?>" loading="lazy"><h3><?= e($item['original_name']) ?></h3><p class="muted small"><?= e($item['mime']) ?> · <?= (int)$item['width'] ?>×<?= (int)$item['height'] ?> · <?= number_format((int)$item['size']/1024,1) ?> KB</p><form method="post"><?php admin_action('metadata') ?><input type="hidden" name="id" value="<?= (int)$item['id'] ?>"><input type="hidden" name="lang" value="<?= e($lang) ?>"><?php admin_field('Başlık','title',(string)($meta['title']??'')); admin_field('Alternatif metin','alt',(string)($meta['alt']??'')); admin_textarea('Açıklama','caption',(string)($meta['caption']??''),2) ?><button class="secondary">Dil metnini kaydet</button></form></article><?php endforeach ?></div><?php
+}
+
+function admin_gallery_page(): void
+{
+    $items=rows("SELECT m.*,g.status,g.sort_order,g.id AS gallery_id FROM media m LEFT JOIN gallery_items g ON g.media_id=m.id WHERE m.purpose='library' AND NOT EXISTS(SELECT 1 FROM request_media r WHERE r.media_id=m.id) ORDER BY CASE WHEN g.id IS NULL THEN 1 ELSE 0 END,g.sort_order DESC,m.id DESC LIMIT 150");
+    ?><section class="panel"><h2>Gerçek görsellerden galeri oluşturun</h2><p class="muted">Araç, ofis ve yapılan taşımalara ait kullanım hakkı sizde olan görselleri önce medya kütüphanesine yükleyin. Yayına almadığınız hiçbir görsel ziyaretçilere gösterilmez.</p></section><?php if(!$items){admin_empty('Galeri için görsel yok.','Önce görsel kütüphanesine gerçek işletme görselleri ekleyin.');return;} ?><div class="media-grid gallery-admin-grid"><?php foreach($items as $item): ?><article class="panel media-card"><img src="/media/<?= (int)$item['id'] ?>?variant=webp" alt="" loading="lazy"><h3><?=e($item['original_name'])?></h3><p class="muted small"><?=isset($item['gallery_id'])?'Galeri kaydı #'.(int)$item['gallery_id']:'Henüz galeriye eklenmedi'?></p><form method="post"><?php admin_action('gallery') ?><input type="hidden" name="media_id" value="<?= (int)$item['id'] ?>"><?php admin_select('Yayın durumu','status',['draft'=>'Taslak / gizli','published'=>'Galeride yayınla'],(string)($item['status']??'draft')); admin_field('Sıra (büyük sayı önce)','sort_order',(string)($item['sort_order']??0),'number'); ?><button><?=isset($item['gallery_id'])?'Galeriyi güncelle':'Galeriye ekle'?></button></form></article><?php endforeach?></div><?php
 }
 
 function admin_seo_page(): void

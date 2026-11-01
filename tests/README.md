@@ -40,3 +40,11 @@ PHP_BIN=php python3 tests/installer_smoke.py
 ```
 
 Bu test ayrı, boş bir veritabanı kullanır. Kurulumun varsayılan olarak kapalı olması, kısa anahtarla açılmaması, CSRF/kurulum anahtarı/site adresi doğrulaması, sırların HTML'e geri yazılmaması, ilk hesabın parola özetiyle oluşturulması, ekranın sonraki kullanımlara kapanması ve hesabın giriş yapabilmesi doğrulanır. Canlı ortamı veya gerçek hesapları değiştirmez.
+
+## Galeri
+
+```sh
+PHP_BIN=php python3 tests/gallery_smoke.py
+```
+
+İzole bir ortamda gerçek dosya doğrulama/yükleme hattıyla kütüphane görseli oluşturur. Yayınlanan kartın ziyaretçi galerisinde, AJAX JSON yanıtında ve herkese açık WebP tesliminde göründüğünü doğrular. Müşteri ekleri bu akışta yayımlanamaz.
