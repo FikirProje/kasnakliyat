@@ -290,11 +290,13 @@ function admin_post(string $section, array $user): void
         audit('gallery.saved','#'.$mediaId.' '.$status); flash('success','Galeri kaydı güncellendi.'); return;
     }
     if ($section === 'settings' && $action === 'settings') {
-        $keys=['business_name','contact_phone','contact_email','whatsapp','address','site_description','facebook_url','instagram_url','linkedin_url','youtube_url','pinterest_url','pinterest_verify','google_site_verification','ai_provider','ai_model','mail_from','smtp_host','smtp_port','smtp_user'];
+        $keys=['business_name','location_label','contact_phone','contact_email','whatsapp','address','site_description','theme_primary','theme_accent','theme_custom_css','facebook_url','instagram_url','linkedin_url','youtube_url','pinterest_url','pinterest_verify','google_site_verification','ai_provider','ai_model','mail_from','smtp_host','smtp_port','smtp_user'];
         foreach ($keys as $key) {
             $value=admin_input($key,1000);
             if (in_array($key,['contact_email','mail_from'],true) && $value !== '' && !filter_var($value,FILTER_VALIDATE_EMAIL)) throw new InvalidArgumentException('E-posta adresini kontrol edin.');
             if (in_array($key,['facebook_url','instagram_url','linkedin_url','youtube_url','pinterest_url'],true) && $value !== '' && (!filter_var($value,FILTER_VALIDATE_URL) || !str_starts_with(strtolower($value),'https://'))) throw new InvalidArgumentException('Sosyal medya bağlantıları HTTPS adresi olmalı.');
+            if (in_array($key,['theme_primary','theme_accent'],true) && $value !== '' && !preg_match('/^#[0-9a-fA-F]{6}$/D',$value)) throw new InvalidArgumentException('Tema renkleri altı haneli HEX değeri olmalı.');
+            if ($key==='theme_custom_css' && (str_contains(strtolower($value),'</style') || mb_strlen($value)>12000)) throw new InvalidArgumentException('Özel CSS geçersiz veya çok uzun.');
             if ($key==='ai_provider' && !in_array($value,['openai'],true)) throw new InvalidArgumentException('Geçersiz API sağlayıcısı.');
             if ($key==='smtp_port' && $value!=='' && (!ctype_digit($value) || (int)$value<1 || (int)$value>65535)) throw new InvalidArgumentException('Geçersiz SMTP portu.');
         }
