@@ -30,6 +30,7 @@ Bu görev zaten yalıtılmıştır. Mevcut checkout'u kullanın; kullanıcı öz
 - `/tr/`: gerçek teklif formu içeren One Page ana sayfa. Türkçe, İngilizce, Almanca, Fransızca, İspanyolca, İtalyanca, Portekizce, Hollandaca, Rusça, Arapça, Çince, Japonca, Korece ve Farsça arayüz. Arapça/Farsça RTL.
 - `/{dil}/hizmetler/yuk-tasimaciligi/`, `/{dil}/blog/`, `/{dil}/galeri/`, `/{dil}/teklif-al/`, `/{dil}/randevu/`, `/{dil}/gizlilik/`.
 - Blog yazıları `/{dil}/blog/{slug}/`, ek hizmetler `/{dil}/hizmetler/{slug}/`, ek sayfalar `/{dil}/sayfa/{slug}/`.
+- İlk kurulumda, yönetim panelinden düzenlenebilen üç Türkçe ve İngilizce örnek rehber yazısı eklenir: yük hazırlığı, teklif bilgileri ve randevu değerlendirmesi. Bunlar işletme başarısı veya müşteri referansı iddia etmez; içerik stüdyosundan değiştirilebilir ya da taslağa alınabilir.
 - `/admin/login`: yönetim merkezi. `admin` tüm modülleri; `editor` içerik, medya, SEO ve AI işlerini; `operator` müşteri talepleri ve randevuları yönetir.
 - Teklifler/randevular önce **Yeni talep** olarak kaydedilir. İdareci fiyat/tarih önerebilir, randevuyu kesinleştirebilir veya reddedebilir. Aynı tarih ve saatte iki randevu kesinleşmez. Bu ilk sürüm tek eşzamanlı randevu kapasitesi kullanır; araç/ekip bazlı süre ve kapasite planlaması yoktur.
 - İçerik stüdyosunda içerik türü/kaynak dili oluşturun, her dilde metin/slug/SEO/kapak/yayın durumunu ayrı kaydedin. Diğer dillere metin kopyalanmaz. Yayın tarihleri İstanbul saatinde girilir, UTC saklanır. Yayın zamanı gelen içerik sonraki istekte görünür.
@@ -54,7 +55,7 @@ Bulut ağında `api.openai.com` için HTTPS izni ve API anahtarı, SMTP için sa
 
 ## Yayın ve SEO
 
-`APP_URL` gerçek HTTPS kök alan adınız olmalı; yol eklemeyin. `APP_ENV=production` ile indekslemeyi açın. Geliştirmede robots ve `X-Robots-Tag` indekslemeyi kapatır. Sitemap, canonical, karşılıklı hreflang/x-default, OG/X ve sayfa türüne uygun JSON-LD üretilir; taslaklar, geleceğe planlı içerikler ve eksik dil sürümleri eklenmez. Slug değişiklikleri 301 ile yönlendirilir. Yerel işletme şeması ancak gerçek adres ve telefon girilince eklenir; sahte puan/yorum yoktur.
+`APP_URL` gerçek HTTPS kök alan adınız olmalı; yol eklemeyin. İlk kurulumda boş veya `localhost` değeri varsa uygulama, ziyaret edilen güvenli adresi otomatik algılar; kurulum tamamlanmadan önce gerçek alan adını `.env` içinde sabitleyin. `APP_ENV=production` ile indekslemeyi açın. Geliştirmede robots ve `X-Robots-Tag` indekslemeyi kapatır. Sitemap, canonical, karşılıklı hreflang/x-default, OG/X ve sayfa türüne uygun JSON-LD üretilir; taslaklar, geleceğe planlı içerikler ve eksik dil sürümleri eklenmez. Slug değişiklikleri 301 ile yönlendirilir. Yerel işletme şeması ancak gerçek adres ve telefon girilince eklenir; sahte puan/yorum yoktur.
 
 İşletme/telefon/e-posta/WhatsApp, gerçek hizmet kapsamı, görseller ve 14 dilin KVKK/veri sorumlusu alanlarını yönetim panelinden tamamlayın. Mevcut gizlilik metinleri açıkça başlangıç taslağıdır; hukuk veya mevzuat uygunluğu onayı değildir. Vergi levhası/kimlik bilgisi yüklenmemiştir ve kamuya yayımlanmaz. Doğrulanmış fotoğraf, yetki belgesi veya işletme geçmişi sağlanmadığından bunlara ilişkin iddia eklenmedi. 14 dil arayüz çevirileri var; hedef pazar araştırması ve ana dili konuşan editör kontrolü ayrı canlıya hazırlık işidir.
 

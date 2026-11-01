@@ -230,8 +230,8 @@ function admin_post(string $section, array $user): void
         if (!$article) throw new InvalidArgumentException('İçerik bulunamadı.');
         $mode=admin_input('mode',20); if (!in_array($mode,['write','improve','localize','image'],true)) throw new InvalidArgumentException('Üretim türü geçersiz.');
         $prompt=admin_input('prompt',6000); if ($prompt === '') throw new InvalidArgumentException('İş için konu veya yönerge girin.');
-        $langs=$_POST['langs'] ?? []; if (!is_array($langs) || !$langs) throw new InvalidArgumentException('En az bir hedef dil seçin.');
-        foreach ($langs as $lang) if (!is_string($lang)||!isset(locales()[$lang])) throw new InvalidArgumentException('Hedef dil geçersiz.');
+        $langs=$_POST['langs'] ?? []; if (!is_array($langs) || !$langs) throw new InvalidArgumentException('Yayınlanacak en az bir dil seçin.');
+        foreach ($langs as $lang) if (!is_string($lang)||!isset(locales()[$lang])) throw new InvalidArgumentException('Yayın dili geçersiz.');
         $langs=array_values(array_unique($langs));
         db()->exec('BEGIN IMMEDIATE');
         try {

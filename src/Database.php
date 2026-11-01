@@ -70,12 +70,58 @@ function migrate_media_purpose(): void {
     migrate_gallery();
 }
 function migrate_gallery(): void {
-    if (row('SELECT version FROM migrations WHERE version=4')) return;
+    if (row('SELECT version FROM migrations WHERE version=4')) { migrate_example_content(); return; }
     db()->beginTransaction();
     try {
         db()->exec("CREATE TABLE gallery_items(id INTEGER PRIMARY KEY,media_id INTEGER NOT NULL UNIQUE REFERENCES media(id) ON DELETE CASCADE,status TEXT NOT NULL DEFAULT 'draft' CHECK(status IN ('draft','published')),sort_order INTEGER NOT NULL DEFAULT 0,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)");
         db()->exec('CREATE INDEX gallery_visible ON gallery_items(status,sort_order DESC,id DESC)');
         query('INSERT INTO migrations(version,applied_at) VALUES(4,datetime(\'now\'))');
+        db()->commit();
+    } catch (Throwable $error) { if (db()->inTransaction()) db()->rollBack(); throw $error; }
+    migrate_example_content();
+}
+function migrate_example_content(): void {
+    if (row('SELECT version FROM migrations WHERE version=5')) { migrate_example_content_formatting(); return; }
+    $examples = [
+        [
+            'category'=>'Taşıma rehberi',
+            'tr'=>['Taşıma öncesi yükünüzü nasıl hazırlarsınız?','tasima-oncesi-yuk-hazirligi','Taşıma talebinizi daha net hazırlamanıza yardımcı olacak pratik bir kontrol listesi.',"Yükünüzün türünü, yaklaşık miktarını, alınacağı ve bırakılacağı noktayı önceden not edin. Hassas ya da ölçüsü büyük parçaları ayrıca belirtin.\n\nUygun tarih aralığını ve erişim koşullarını paylaşmak, talebin daha sağlıklı değerlendirilmesine yardımcı olur. Bu yazı genel bir hazırlık rehberidir; her taşıma için kapsam ve koşullar ayrıca teyit edilmelidir.",'Taşıma öncesi yük hazırlığı | Kaş Nakliyat','Yük taşıma talebi öncesinde paylaşılabilecek temel bilgiler.','nakliye hazırlığı, yük taşıma, Kaş'],
+            'en'=>['How to prepare a cargo request','preparing-a-cargo-request','A practical checklist for preparing a clear transport request.',"Note the type and approximate quantity of the cargo, as well as the pickup and delivery points. Mention fragile or oversized pieces separately.\n\nSharing a suitable date range and access conditions helps the request be reviewed more clearly. This is a general preparation guide; scope and conditions are confirmed separately for each transport.",'Preparing a cargo request | Kaş Nakliyat','Key details to prepare before requesting cargo transport.','cargo preparation, transport request, Kaş']
+        ],
+        [
+            'category'=>'Planlama',
+            'tr'=>['Teklif talebinde hangi bilgiler faydalıdır?','teklif-talebinde-gerekli-bilgiler','Doğru kapsamla fiyatlandırma için yararlı bilgileri bir araya getirin.',"Kalkış ve varış noktası, yükün türü, tercih edilen tarih ve iletişim bilgileri teklif talebinin temelini oluşturur.\n\nMerdiven, kat, araç yaklaşımı veya zaman kısıtı gibi erişimi etkileyen ayrıntıları eklemek değerlendirmeyi kolaylaştırır. Talep göndermek otomatik onay veya kesin fiyat anlamına gelmez.",'Teklif talebinde gerekli bilgiler | Kaş Nakliyat','Nakliye teklif talebini hazırlamak için temel bilgiler.','nakliye teklifi, taşıma planlama, Kaş'],
+            'en'=>['What helps when requesting a quote?','details-for-a-transport-quote','Gather the details that help define a transport request clearly.',"Pickup and delivery points, cargo type, preferred date and contact details form the basis of a quote request.\n\nAccess details such as stairs, floors, vehicle approach or time constraints can make review easier. Submitting a request is not an automatic confirmation or a final price.",'Details for a transport quote | Kaş Nakliyat','Useful details to prepare for a transport quote request.','transport quote, planning, Kaş']
+        ],
+        [
+            'category'=>'Randevu',
+            'tr'=>['Randevu talebi nasıl değerlendirilir?','randevu-talebi-nasil-degerlendirilir','Talep, uygunluk ve ayrıntılar incelendikten sonra netleştirilir.',"Randevu talebiniz alındığında tercih edilen tarih ve saat, taşıma kapsamı ve gerekli erişim ayrıntıları birlikte değerlendirilir.\n\nKesinleşen bir zaman ancak işletme onayı sonrasında oluşur. Böylece takvim çakışmaları ve eksik bilgiler nedeniyle oluşabilecek yanlış anlaşılmalar önlenir.",'Randevu talebi değerlendirme süreci | Kaş Nakliyat','Nakliye randevu talebinin değerlendirme süreci hakkında genel bilgi.','nakliye randevusu, taşıma talebi, Kaş'],
+            'en'=>['How is an appointment request reviewed?','how-an-appointment-request-is-reviewed','The request is confirmed after availability and details are reviewed.',"When an appointment request arrives, the preferred date and time, the transport scope and the access details are considered together.\n\nA time becomes confirmed only after the business approves it. This helps prevent scheduling conflicts and misunderstandings caused by missing details.",'Appointment request review | Kaş Nakliyat','General information about reviewing a transport appointment request.','transport appointment, request review, Kaş']
+        ],
+    ];
+    db()->beginTransaction();
+    try {
+        foreach ($examples as $example) {
+            query("INSERT INTO articles(kind,source_lang,category,created_at,updated_at) VALUES('article','tr',?,datetime('now'),datetime('now'))", [$example['category']]);
+            $articleId = (int) db()->lastInsertId();
+            foreach (['tr','en'] as $lang) {
+                [$title,$slug,$excerpt,$body,$seoTitle,$seoDescription,$keywords] = $example[$lang];
+                query("INSERT INTO translations(article_id,lang,title,slug,excerpt,body,seo_title,seo_description,keywords,status,scheduled_at,source_revision,revision,updated_at) VALUES(?,?,?,?,?,?,?,?,?,'published',NULL,1,1,datetime('now'))", [$articleId,$lang,$title,$slug,$excerpt,$body,$seoTitle,$seoDescription,$keywords]);
+            }
+        }
+        query('INSERT INTO migrations(version,applied_at) VALUES(5,datetime(\'now\'))');
+        db()->commit();
+    } catch (Throwable $error) { if (db()->inTransaction()) db()->rollBack(); throw $error; }
+    migrate_example_content_formatting();
+}
+function migrate_example_content_formatting(): void {
+    if (row('SELECT version FROM migrations WHERE version=6')) return;
+    db()->beginTransaction();
+    try {
+        foreach (rows("SELECT id,body FROM translations WHERE slug IN ('tasima-oncesi-yuk-hazirligi','preparing-a-cargo-request','teklif-talebinde-gerekli-bilgiler','details-for-a-transport-quote','randevu-talebi-nasil-degerlendirilir','how-an-appointment-request-is-reviewed')") as $translation) {
+            query('UPDATE translations SET body=?,updated_at=datetime(\'now\') WHERE id=?', [str_replace('\\n', "\n", (string)$translation['body']), $translation['id']]);
+        }
+        query('INSERT INTO migrations(version,applied_at) VALUES(6,datetime(\'now\'))');
         db()->commit();
     } catch (Throwable $error) { if (db()->inTransaction()) db()->rollBack(); throw $error; }
 }

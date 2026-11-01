@@ -30,18 +30,30 @@ if (PHP_SAPI !== 'cli') {
     ini_set('session.use_strict_mode', '1');
     session_save_path(storage_path('sessions'));
     session_name('kas_session');
-    session_set_cookie_params(['lifetime' => 0, 'path' => '/', 'secure' => str_starts_with(envv('APP_URL'), 'https://'), 'httponly' => true, 'samesite' => 'Lax']);
+    session_set_cookie_params(['lifetime' => 0, 'path' => '/', 'secure' => str_starts_with(app_origin(), 'https://'), 'httponly' => true, 'samesite' => 'Lax']);
     session_start();
     header('X-Content-Type-Options: nosniff');
     header('X-Frame-Options: DENY');
     header('Referrer-Policy: strict-origin-when-cross-origin');
     header('Permissions-Policy: camera=(), microphone=(), geolocation=()');
     header("Content-Security-Policy: default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'self'; frame-src https://www.google.com https://maps.google.com; base-uri 'none'; form-action 'self'; frame-ancestors 'none'");
-    if (str_starts_with(envv('APP_URL'), 'https://')) header('Strict-Transport-Security: max-age=31536000');
+    if (str_starts_with(app_origin(), 'https://')) header('Strict-Transport-Security: max-age=31536000');
 }
 function e(mixed $value): string { return htmlspecialchars((string)($value ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); }
+function app_origin(): string {
+    $configured = rtrim(envv('APP_URL', ''), '/');
+    $placeholder = $configured === '' || preg_match('#^https?://(?:127\.0\.0\.1|localhost)(?::\d+)?$#i', $configured);
+    if ($placeholder && PHP_SAPI !== 'cli') {
+        $host = $_SERVER['HTTP_HOST'] ?? '';
+        if (is_string($host) && preg_match('/^[a-z0-9.\-\[\]:]+$/i', $host)) {
+            $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
+            return ($https ? 'https://' : 'http://') . $host;
+        }
+    }
+    return $configured !== '' ? $configured : 'http://127.0.0.1:8080';
+}
 function base_url(string $path = ''): string {
-    $base = rtrim(envv('APP_URL', 'http://127.0.0.1:8080'), '/');
+    $base = app_origin();
     if (!preg_match('#^https?://[a-z0-9.\-\[\]:]+(?::\d+)?$#i', $base)) throw new RuntimeException('APP_URL must contain an HTTP(S) origin without a path.');
     return $base . ($path === '' ? '' : '/' . ltrim($path, '/'));
 }

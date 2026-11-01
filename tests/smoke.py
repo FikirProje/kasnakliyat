@@ -406,7 +406,7 @@ class Smoke:
             assert self.sql("SELECT count(*) n FROM jobs")[0]["n"] == before, "over-cap batch partially enqueued"
             fields["langs[]"] = ["en", "invalid"]
             status, body, _, _ = self.editor.form(f"/admin/editor?id={self.article_id}&lang=tr", fields)
-            assert status == 200 and "Hedef dil geçersiz" in body.decode(), "invalid target error not visible"
+            assert status == 200 and "Yayın dili geçersiz" in body.decode(), "invalid publishing-language error not visible"
             assert self.sql("SELECT count(*) n FROM jobs")[0]["n"] == before, "invalid target batch partially enqueued"
         finally:
             self.sql("DELETE FROM jobs WHERE prompt='Atomic bulk fixture'")

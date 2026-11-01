@@ -16,7 +16,9 @@ KAŞ NAKLİYAT — SUNUCUYA YÜKLEME
    APP_ENV=production
    INSTALL_TOKEN=kendinize-ozel-rastgele-en-az-32-karakterlik-gizli-anahtar
    Kurulum anahtarını örnekteki metinle bırakmayın; kendinize özel üretin.
-   SSL sertifikasının çalıştığından emin olun.
+   SSL sertifikasının çalıştığından emin olun. Alan adınız henüz hazır değilse
+   kurulum ekranı eriştiğiniz adresi otomatik algılar; canlıya geçmeden önce
+   APP_URL değerini gerçek HTTPS alan adınızla sabitleyin.
 
 4. Alan adınızda /install adresini açın. Sistem sunucu kontrollerini gösterir.
    Yönetici e-postası: info@kasnakliyat.com
