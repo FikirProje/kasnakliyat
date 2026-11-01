@@ -208,6 +208,31 @@ function ai_generate_text(array $job): array
     return $clean;
 }
 
+/** Produces a reviewable interface dictionary; it never publishes a language by itself. */
+function ai_translate_interface_catalog(string $code, string $language): array
+{
+    $key = (string) envv('AI_API_KEY', '');
+    if ($key === '') throw new RuntimeException('AI_API_KEY yapılandırılmadı. Otomatik çeviri için anahtarı sunucu ortamına ekleyin.');
+    if (ai_provider_setting() !== 'openai') throw new RuntimeException('Bu sürümde desteklenen sağlayıcı OpenAI’dır.');
+    $source = translation_catalog()['tr'];
+    $system = 'You translate public website interface text. Return exactly one JSON object using every supplied key exactly once. Translate each Turkish value naturally into the requested language. Preserve company name Kaş Nakliyat, URLs, phone formatting, and placeholders. Do not add claims, services, prices, licenses or facts. Do not return Markdown or explanations.';
+    $user = json_encode(['target_language' => $language, 'language_code' => $code, 'source' => $source], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+    $payload = json_encode(['model' => ai_model_setting(), 'messages' => [['role'=>'system','content'=>$system],['role'=>'user','content'=>$user]], 'response_format'=>['type'=>'json_object'], 'max_completion_tokens'=>8000], JSON_THROW_ON_ERROR);
+    $envelope = ai_openai_request('/v1/chat/completions', $payload, $key, 2 * 1024 * 1024);
+    $text = $envelope['choices'][0]['message']['content'] ?? null;
+    if (!is_string($text) || ($envelope['choices'][0]['finish_reason'] ?? '') === 'length') throw new RuntimeException('API arayüz sözlüğünü eksik döndürdü. İşi yeniden deneyin.');
+    $dictionary = json_decode($text, true, 512, JSON_THROW_ON_ERROR);
+    validate_interface_catalog($dictionary);
+    return $dictionary;
+}
+
+function validate_interface_catalog(mixed $dictionary): void
+{
+    $keys = array_keys(translation_catalog()['tr']);
+    if (!is_array($dictionary) || count($dictionary) !== count($keys) || array_diff(array_keys($dictionary), $keys) || array_diff($keys, array_keys($dictionary))) throw new RuntimeException('Arayüz sözlüğü kaynak anahtarlarıyla tam olarak eşleşmiyor.');
+    foreach ($dictionary as $value) if (!is_string($value) || trim($value) === '' || mb_strlen($value) > 1200) throw new RuntimeException('Arayüz sözlüğünde geçersiz bir metin var.');
+}
+
 function ai_provider_setting(): string
 {
     return trim(setting('ai_provider', 'openai')) ?: 'openai';

@@ -112,7 +112,7 @@ function public_request(string $lang, string $kind): array {
 }
 function handle_public(string $path): void {
     if ($path === '/') redirect('/tr/');
-    if (!preg_match('#^/([a-z]{2})(?:/(.*))?$#u',$path,$matches) || !array_key_exists($matches[1],locales())) {
+    if (!preg_match('#^/([a-z]{2,3}(?:-[a-z0-9]{2,8})?)(?:/(.*))?$#u',$path,$matches) || !array_key_exists($matches[1],locales())) {
         render_error(404,'Sayfa bulunamadı / Page not found');
     }
     $lang=$matches[1]; $tail=trim($matches[2] ?? '','/'); $page='home'; $article=null; $errors=[];

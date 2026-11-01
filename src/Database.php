@@ -115,13 +115,24 @@ function migrate_example_content(): void {
     migrate_example_content_formatting();
 }
 function migrate_example_content_formatting(): void {
-    if (row('SELECT version FROM migrations WHERE version=6')) return;
+    if (row('SELECT version FROM migrations WHERE version=6')) { migrate_language_packages(); return; }
     db()->beginTransaction();
     try {
         foreach (rows("SELECT id,body FROM translations WHERE slug IN ('tasima-oncesi-yuk-hazirligi','preparing-a-cargo-request','teklif-talebinde-gerekli-bilgiler','details-for-a-transport-quote','randevu-talebi-nasil-degerlendirilir','how-an-appointment-request-is-reviewed')") as $translation) {
             query('UPDATE translations SET body=?,updated_at=datetime(\'now\') WHERE id=?', [str_replace('\\n', "\n", (string)$translation['body']), $translation['id']]);
         }
         query('INSERT INTO migrations(version,applied_at) VALUES(6,datetime(\'now\'))');
+        db()->commit();
+    } catch (Throwable $error) { if (db()->inTransaction()) db()->rollBack(); throw $error; }
+    migrate_language_packages();
+}
+
+function migrate_language_packages(): void {
+    if (row('SELECT version FROM migrations WHERE version=7')) return;
+    db()->beginTransaction();
+    try {
+        db()->exec("CREATE TABLE site_languages(code TEXT PRIMARY KEY,native_name TEXT NOT NULL,english_name TEXT NOT NULL,direction TEXT NOT NULL CHECK(direction IN ('ltr','rtl')),status TEXT NOT NULL DEFAULT 'disabled' CHECK(status IN ('enabled','disabled')),ui_status TEXT NOT NULL DEFAULT 'draft' CHECK(ui_status IN ('draft','review','published')),ui_catalog TEXT NOT NULL DEFAULT '',created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)");
+        query("INSERT INTO migrations(version,applied_at) VALUES(7,datetime('now'))");
         db()->commit();
     } catch (Throwable $error) { if (db()->inTransaction()) db()->rollBack(); throw $error; }
 }

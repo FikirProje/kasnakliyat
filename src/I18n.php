@@ -4,11 +4,36 @@ declare(strict_types=1);
 /** All public interface strings are explicitly translated, including errors and privacy notice. */
 function locales(): array
 {
+    $base = core_locales();
+    try {
+        foreach (rows("SELECT code,native_name FROM site_languages WHERE status='enabled' AND ui_status='published' ORDER BY native_name") as $language) {
+            $base[$language['code']] = $language['native_name'];
+        }
+    } catch (Throwable) { /* Installer runs before this optional table exists. */ }
+    return $base;
+}
+
+function core_locales(): array
+{
     return ['tr' => 'Türkçe', 'en' => 'English', 'de' => 'Deutsch', 'fr' => 'Français', 'es' => 'Español', 'it' => 'Italiano', 'pt' => 'Português', 'nl' => 'Nederlands', 'ru' => 'Русский', 'ar' => 'العربية', 'zh' => '中文', 'ja' => '日本語', 'ko' => '한국어', 'fa' => 'فارسی'];
+}
+
+/** Includes unpublished custom packages so editors can prepare them safely. */
+function admin_locales(): array
+{
+    $all = core_locales();
+    try {
+        foreach (rows('SELECT code,native_name FROM site_languages ORDER BY native_name') as $language) $all[$language['code']] = $language['native_name'];
+    } catch (Throwable) { }
+    return $all;
 }
 
 function locale_direction(string $lang): string
 {
+    try {
+        $custom = row('SELECT direction FROM site_languages WHERE code=?', [$lang]);
+        if ($custom) return $custom['direction'];
+    } catch (Throwable) { }
     return in_array($lang, ['ar', 'fa'], true) ? 'rtl' : 'ltr';
 }
 
@@ -1399,5 +1424,14 @@ JSON, true, 512, JSON_THROW_ON_ERROR);
 function t(string $key, string $lang): string
 {
     $catalog = translation_catalog();
+    if (!isset($catalog[$lang])) {
+        try {
+            $custom = row("SELECT ui_catalog FROM site_languages WHERE code=? AND status='enabled' AND ui_status='published'", [$lang]);
+            if ($custom && $custom['ui_catalog'] !== '') {
+                $dictionary = json_decode($custom['ui_catalog'], true, 512, JSON_THROW_ON_ERROR);
+                if (is_array($dictionary) && isset($dictionary[$key]) && is_string($dictionary[$key])) return $dictionary[$key];
+            }
+        } catch (Throwable) { }
+    }
     return $catalog[$lang][$key] ?? $catalog['tr'][$key] ?? $key;
 }

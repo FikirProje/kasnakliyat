@@ -67,7 +67,7 @@ function audit(string $action, string $detail = ''): void {
     query('INSERT INTO audit_logs(user_id,action,detail,created_at) VALUES(?,?,?,datetime(\'now\'))', [$_SESSION['user_id'] ?? null, $action, mb_substr($detail, 0, 2000)]);
 }
 function request_lang(): string {
-    preg_match('#^/([a-z]{2})(?:/|$)#', parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/', $m);
+    preg_match('#^/([a-z]{2,3}(?:-[a-z0-9]{2,8})?)(?:/|$)#', parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/', $m);
     return isset($m[1]) && function_exists('locales') && isset(locales()[$m[1]]) ? $m[1] : 'tr';
 }
 function render_error(int $status, string $message): never {
