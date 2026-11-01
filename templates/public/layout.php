@@ -2,18 +2,19 @@
 <html lang="<?=e($lang)?>" dir="<?=e(locale_direction($lang))?>">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title><?=e($title)?> · Kaş Nakliyat</title><meta name="description" content="<?=e($description)?>">
+<?php $brand=setting('business_name','Kaş Nakliyat'); ?><title><?=e($title)?> · <?=e($brand)?></title><meta name="description" content="<?=e($description)?>">
 <meta name="theme-color" content="#0D2E42"><meta name="robots" content="<?=($page==='404' || envv('APP_ENV','development')!=='production')?'noindex,nofollow':'index,follow'?>">
 <link rel="canonical" href="<?=e($canonical)?>">
 <?php foreach($alternates as $code=>$url):?><link rel="alternate" hreflang="<?=e($code)?>" href="<?=e(base_url($url))?>"><?php endforeach?>
 <?php if($alternates):?><link rel="alternate" hreflang="x-default" href="<?=e(base_url($alternates['tr'] ?? reset($alternates)))?>"><?php endif?>
-<meta property="og:type" content="<?=$page==='article'?'article':'website'?>"><meta property="og:title" content="<?=e($title)?>"><meta property="og:description" content="<?=e($description)?>"><meta property="og:url" content="<?=e($canonical)?>"><meta property="og:site_name" content="Kaş Nakliyat"><meta property="og:image" content="<?=e($ogImage)?>">
+<meta property="og:type" content="<?=$page==='article'?'article':'website'?>"><meta property="og:title" content="<?=e($title)?>"><meta property="og:description" content="<?=e($description)?>"><meta property="og:url" content="<?=e($canonical)?>"><meta property="og:site_name" content="<?=e($brand)?>"><meta property="og:image" content="<?=e($ogImage)?>">
 <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="<?=e($title)?>"><meta name="twitter:description" content="<?=e($description)?>"><meta name="twitter:image" content="<?=e($ogImage)?>">
+<?php if(setting('pinterest_verify')):?><meta name="p:domain_verify" content="<?=e(setting('pinterest_verify'))?>"><?php endif?><?php if(setting('google_site_verification')):?><meta name="google-site-verification" content="<?=e(setting('google_site_verification'))?>"><?php endif?>
 <link rel="icon" href="/assets/brand.svg" type="image/svg+xml"><link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png"><link rel="stylesheet" href="/assets/site.css"><script src="/assets/site.js" defer></script>
 <?php
 $schema=['@context'=>'https://schema.org','@type'=>'WebPage','name'=>$title,'description'=>$description,'url'=>$canonical,'inLanguage'=>$lang];
-if($page==='home') $schema=['@context'=>'https://schema.org','@graph'=>[['@type'=>'Organization','@id'=>base_url('/').'#organization','name'=>'Kaş Nakliyat','url'=>base_url('/'),'logo'=>base_url('/assets/brand.svg')],['@type'=>'WebSite','name'=>'Kaş Nakliyat','url'=>base_url('/'),'inLanguage'=>array_keys(locales())]]];
-if($page==='home' && setting('address')!=='' && setting('contact_phone')!=='') $schema['@graph'][]=['@type'=>'LocalBusiness','@id'=>base_url('/').'#business','name'=>'Kaş Nakliyat','url'=>base_url('/'),'address'=>setting('address'),'telephone'=>setting('contact_phone')];
+if($page==='home') $schema=['@context'=>'https://schema.org','@graph'=>[['@type'=>'Organization','@id'=>base_url('/').'#organization','name'=>$brand,'url'=>base_url('/'),'logo'=>base_url('/assets/brand.svg')],['@type'=>'WebSite','name'=>$brand,'url'=>base_url('/'),'inLanguage'=>array_keys(locales())]]];
+if($page==='home' && setting('address')!=='' && setting('contact_phone')!=='') $schema['@graph'][]=['@type'=>'LocalBusiness','@id'=>base_url('/').'#business','name'=>$brand,'url'=>base_url('/'),'address'=>setting('address'),'telephone'=>setting('contact_phone')];
 if($page==='service') $schema=['@context'=>'https://schema.org','@type'=>'Service','name'=>t('service_title',$lang),'description'=>t('service_intro',$lang),'provider'=>['@type'=>'Organization','name'=>'Kaş Nakliyat']];
 if($article) { $schema=['@context'=>'https://schema.org','@type'=>(['service'=>'Service','page'=>'WebPage','article'=>'BlogPosting'][$article['kind']] ?? 'WebPage'),($article['kind']==='article'?'headline':'name')=>$article['title'],'description'=>$description,'inLanguage'=>$lang,'url'=>$canonical,'dateModified'=>date('c',strtotime($article['updated_at'].' UTC')),'publisher'=>['@type'=>'Organization','name'=>'Kaş Nakliyat']]; }
 if($page!=='home' && $page!=='404') {

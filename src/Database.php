@@ -128,11 +128,27 @@ function migrate_example_content_formatting(): void {
 }
 
 function migrate_language_packages(): void {
-    if (row('SELECT version FROM migrations WHERE version=7')) return;
+    if (row('SELECT version FROM migrations WHERE version=7')) { migrate_moving_service(); return; }
     db()->beginTransaction();
     try {
         db()->exec("CREATE TABLE site_languages(code TEXT PRIMARY KEY,native_name TEXT NOT NULL,english_name TEXT NOT NULL,direction TEXT NOT NULL CHECK(direction IN ('ltr','rtl')),status TEXT NOT NULL DEFAULT 'disabled' CHECK(status IN ('enabled','disabled')),ui_status TEXT NOT NULL DEFAULT 'draft' CHECK(ui_status IN ('draft','review','published')),ui_catalog TEXT NOT NULL DEFAULT '',created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)");
         query("INSERT INTO migrations(version,applied_at) VALUES(7,datetime('now'))");
+        db()->commit();
+    } catch (Throwable $error) { if (db()->inTransaction()) db()->rollBack(); throw $error; }
+    migrate_moving_service();
+}
+
+/** A real, editable starting service rather than an unsupported business claim. */
+function migrate_moving_service(): void {
+    if (row('SELECT version FROM migrations WHERE version=8')) return;
+    db()->beginTransaction();
+    try {
+        query("INSERT INTO articles(kind,source_lang,category,created_at,updated_at) VALUES('service','tr','Ev taşımacılığı',datetime('now'),datetime('now'))");
+        $id=(int)db()->lastInsertId();
+        $tr=['Kaş şehir içi ev taşımacılığı','kas-sehir-ici-ev-tasimaciligi','Kaş içindeki ev taşıma talebiniz için güzergâh, eşya ve erişim ayrıntılarını birlikte değerlendirelim.',"Kaş içinde ev taşıma talebiniz için taşınacak eşyayı, kat ve erişim koşullarını, adresleri ve tercih ettiğiniz tarihi paylaşabilirsiniz. Değerlendirme sonrasında kapsam ve uygunluk netleştirilir.\n\nBu sayfa başlangıç hizmet metnidir. İşletmeniz paketleme, montaj, sigorta veya asansörlü taşıma sunuyorsa bunları yalnız doğrulanmış kapsamınıza göre düzenleyin.",'Kaş şehir içi ev taşımacılığı | Kaş Nakliyat','Kaş içi ev taşıma talebinde paylaşılabilecek temel bilgiler.','Kaş ev taşımacılığı, şehir içi nakliyat, evden eve nakliyat'];
+        $en=['Local home moving in Kaş','local-home-moving-kas','Share your addresses, household items and access details for a move within Kaş.',"For a home-moving enquiry within Kaş, share the items to be moved, floors and access conditions, addresses and your preferred date. Scope and availability are clarified after review.\n\nThis is starter service copy. Only describe packing, assembly, insurance or lift services if your business has confirmed that it provides them.",'Local home moving in Kaş | Kaş Nakliyat','Useful details to prepare for a local home-moving enquiry in Kaş.','Kaş home moving, local transport, household move'];
+        foreach(['tr'=>$tr,'en'=>$en] as $lang=>$data) query("INSERT INTO translations(article_id,lang,title,slug,excerpt,body,seo_title,seo_description,keywords,status,source_revision,revision,updated_at) VALUES(?,?,?,?,?,?,?,?,?,'published',1,1,datetime('now'))",[$id,$lang,...$data]);
+        query("INSERT INTO migrations(version,applied_at) VALUES(8,datetime('now'))");
         db()->commit();
     } catch (Throwable $error) { if (db()->inTransaction()) db()->rollBack(); throw $error; }
 }
