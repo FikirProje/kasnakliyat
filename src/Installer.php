@@ -31,6 +31,8 @@ function handle_install(): void
     $errors = [];
     $adminName = '';
     $businessName = '';
+    $countryCode = strtoupper((string)($_POST['country_code'] ?? 'TR'));
+    if (!isset(country_profiles()[$countryCode])) $countryCode = 'TR';
     $adminEmail = (string)(require ROOT . '/config/site.php')['setup_admin_email'];
     $submittedUrl = $configuredUrl;
     if ($ready) {
@@ -64,12 +66,14 @@ function handle_install(): void
                 } else {
                     $adminName = is_string($_POST['admin_name'] ?? null) ? trim($_POST['admin_name']) : '';
                     $businessName = is_string($_POST['business_name'] ?? null) ? trim($_POST['business_name']) : '';
+                    $countryCode = strtoupper(is_string($_POST['country_code'] ?? null) ? trim($_POST['country_code']) : 'TR');
                     $adminEmail = is_string($_POST['admin_email'] ?? null) ? mb_strtolower(trim($_POST['admin_email'])) : '';
                     $password = is_string($_POST['admin_password'] ?? null) ? $_POST['admin_password'] : '';
                     $confirmation = is_string($_POST['admin_password_confirm'] ?? null) ? $_POST['admin_password_confirm'] : '';
                     $submittedUrl = is_string($_POST['app_url'] ?? null) ? rtrim(trim($_POST['app_url']), '/') : '';
                     if ($adminName === '' || mb_strlen($adminName) > 100) $errors[] = 'Name must be 1–100 characters.';
                     if ($businessName === '' || mb_strlen($businessName) > 120) $errors[] = 'Business name must be 1–120 characters.';
+                    try { $country = country_profile($countryCode); } catch (Throwable) { $errors[] = 'Select a supported country.'; $country=[]; }
                     if (!filter_var($adminEmail, FILTER_VALIDATE_EMAIL) || strlen($adminEmail) > 254) $errors[] = 'Geçerli bir yönetici e-postası girin.';
                     if (mb_strlen($password) < 12 || strlen($password) > 72 || str_contains($password, "\0")) $errors[] = 'Parola en az 12 karakter ve en fazla 72 bayt olmalı.';
                     if (!hash_equals($password, $confirmation)) $errors[] = 'Parola tekrarı eşleşmiyor.';
@@ -87,6 +91,8 @@ function handle_install(): void
                             save_setting('business_name',$businessName);
                             save_setting('admin_locale',$installLang);
                             save_setting('default_locale',$installLang);
+                            foreach ($country as $key=>$value) if ($key !== 'code') save_setting('country_'.$key,(string)$value);
+                            save_setting('country_code',$countryCode);
                             audit('installation.completed', 'İlk yönetici oluşturuldu.');
                             db()->exec('COMMIT');
                         } catch (Throwable $error) {
