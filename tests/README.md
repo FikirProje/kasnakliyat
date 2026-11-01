@@ -47,4 +47,12 @@ Bu test ayrı, boş bir veritabanı kullanır. Kurulumun varsayılan olarak kapa
 PHP_BIN=php python3 tests/gallery_smoke.py
 ```
 
+## Ülke profil matrisi
+
+```sh
+php tests/country_profiles_smoke.php
+```
+
+Bu test 195 pazar profilinin kod, varsayılan para birimi, saat dilimi, tarih biçimi ve geçersiz kod reddi davranışını doğrular. Bir profil için varsayılan `USD`/`UTC` görülmesi, o ülke için yerel mali/vergisel uygunluk veya tam ülke yerelleştirmesi iddiası değildir.
+
 İzole bir ortamda gerçek dosya doğrulama/yükleme hattıyla kütüphane görseli oluşturur. Yayınlanan kartın ziyaretçi galerisinde, AJAX JSON yanıtında ve herkese açık WebP tesliminde göründüğünü doğrular. Müşteri ekleri bu akışta yayımlanamaz.
