@@ -26,6 +26,10 @@ ini_set('display_errors', '0');
 ini_set('error_log', storage_path('logs/php.log'));
 require_once __DIR__ . '/Database.php';
 require_once __DIR__ . '/Security.php';
+function csp_nonce(): string {
+    static $nonce = null;
+    return $nonce ??= rtrim(strtr(base64_encode(random_bytes(18)), '+/', '-_'), '=');
+}
 if (PHP_SAPI !== 'cli') {
     ini_set('session.use_strict_mode', '1');
     session_save_path(storage_path('sessions'));
@@ -36,7 +40,7 @@ if (PHP_SAPI !== 'cli') {
     header('X-Frame-Options: DENY');
     header('Referrer-Policy: strict-origin-when-cross-origin');
     header('Permissions-Policy: camera=(), microphone=(), geolocation=()');
-    header("Content-Security-Policy: default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'self'; frame-src https://www.google.com https://maps.google.com; base-uri 'none'; form-action 'self'; frame-ancestors 'none'");
+    header("Content-Security-Policy: default-src 'self'; img-src 'self' data:; style-src 'self' 'nonce-".csp_nonce()."'; script-src 'self'; connect-src 'self'; frame-src https://www.google.com https://maps.google.com; base-uri 'none'; form-action 'self'; frame-ancestors 'none'");
     if (str_starts_with(app_origin(), 'https://')) header('Strict-Transport-Security: max-age=31536000');
 }
 function e(mixed $value): string { return htmlspecialchars((string)($value ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); }
@@ -76,7 +80,7 @@ function render_error(int $status, string $message): never {
     $lang = request_lang(); $direction = function_exists('locale_direction') ? locale_direction($lang) : 'ltr';
     echo '<!doctype html><html lang="' . $lang . '" dir="' . $direction . '"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Kaş Nakliyat</title><link rel="stylesheet" href="/assets/site.css"><body><main class="narrow section"><h1>' . $status . '</h1><p>' . e($message) . '</p><a href="/' . $lang . '/">Kaş Nakliyat</a></main></body></html>'; exit;
 }
-foreach (['I18n', 'Integrations', 'InboundMail', 'PublicSite', 'Admin', 'Installer'] as $module) {
+foreach (['I18n', 'InstallerI18n', 'Integrations', 'InboundMail', 'PublicSite', 'Admin', 'Installer'] as $module) {
     $file = __DIR__ . '/' . $module . '.php';
     if (is_file($file)) require_once $file;
 }
