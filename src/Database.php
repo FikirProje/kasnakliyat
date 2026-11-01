@@ -140,7 +140,7 @@ function migrate_language_packages(): void {
 
 /** A real, editable starting service rather than an unsupported business claim. */
 function migrate_moving_service(): void {
-    if (row('SELECT version FROM migrations WHERE version=8')) return;
+    if (row('SELECT version FROM migrations WHERE version=8')) { migrate_inbound_mail(); return; }
     db()->beginTransaction();
     try {
         query("INSERT INTO articles(kind,source_lang,category,created_at,updated_at) VALUES('service','tr','Ev taşımacılığı',datetime('now'),datetime('now'))");
@@ -149,6 +149,18 @@ function migrate_moving_service(): void {
         $en=['Local home moving in Kaş','local-home-moving-kas','Share your addresses, household items and access details for a move within Kaş.',"For a home-moving enquiry within Kaş, share the items to be moved, floors and access conditions, addresses and your preferred date. Scope and availability are clarified after review.\n\nThis is starter service copy. Only describe packing, assembly, insurance or lift services if your business has confirmed that it provides them.",'Local home moving in Kaş | Kaş Nakliyat','Useful details to prepare for a local home-moving enquiry in Kaş.','Kaş home moving, local transport, household move'];
         foreach(['tr'=>$tr,'en'=>$en] as $lang=>$data) query("INSERT INTO translations(article_id,lang,title,slug,excerpt,body,seo_title,seo_description,keywords,status,source_revision,revision,updated_at) VALUES(?,?,?,?,?,?,?,?,?,'published',1,1,datetime('now'))",[$id,$lang,...$data]);
         query("INSERT INTO migrations(version,applied_at) VALUES(8,datetime('now'))");
+        db()->commit();
+    } catch (Throwable $error) { if (db()->inTransaction()) db()->rollBack(); throw $error; }
+    migrate_inbound_mail();
+}
+
+function migrate_inbound_mail(): void {
+    if (row('SELECT version FROM migrations WHERE version=9')) return;
+    db()->beginTransaction();
+    try {
+        db()->exec("CREATE TABLE inbound_messages(id INTEGER PRIMARY KEY,uidvalidity TEXT NOT NULL,uid TEXT NOT NULL,message_id TEXT NOT NULL DEFAULT '',request_id INTEGER REFERENCES requests(id) ON DELETE SET NULL,sender TEXT NOT NULL,subject TEXT NOT NULL,body TEXT NOT NULL,received_at TEXT NOT NULL,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,UNIQUE(uidvalidity,uid))");
+        db()->exec('CREATE INDEX inbound_messages_request ON inbound_messages(request_id,received_at DESC)');
+        query("INSERT INTO migrations(version,applied_at) VALUES(9,datetime('now'))");
         db()->commit();
     } catch (Throwable $error) { if (db()->inTransaction()) db()->rollBack(); throw $error; }
 }

@@ -7,8 +7,8 @@ if (PHP_SAPI !== 'cli') {
 }
 try {
     $mode = $argv[1] ?? 'all';
-    if (!in_array($mode, ['all', 'ai', 'mail'], true)) {
-        throw new InvalidArgumentException('Usage: php bin/worker.php [all|ai|mail]');
+    if (!in_array($mode, ['all', 'ai', 'mail', 'inbox'], true)) {
+        throw new InvalidArgumentException('Usage: php bin/worker.php [all|ai|mail|inbox]');
     }
     $result = [];
     if ($mode !== 'mail') {
@@ -16,6 +16,9 @@ try {
     }
     if ($mode !== 'ai') {
         $result['mail'] = send_mail_queue(10);
+    }
+    if (in_array($mode, ['all','inbox'], true)) {
+        $result['inbox'] = process_inbound_mail(20);
     }
     echo json_encode($result, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR) . PHP_EOL;
     $failures = (int) ($result['ai']['failed'] ?? 0) + (int) ($result['mail']['failed'] ?? 0);
