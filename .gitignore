@@ -2,5 +2,6 @@
 /storage/*
 !/storage/.gitkeep
 *.sqlite*
+/kasnakliyat-*.zip
 /tests/.output/
 /.DS_Store
