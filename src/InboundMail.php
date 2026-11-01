@@ -29,7 +29,9 @@ function process_inbound_mail(int $limit = 20): array
     if (!extension_loaded('imap') || !function_exists('imap_open')) {
         throw new RuntimeException('IMAP PHP eklentisi kurulu değil. Gelen kutusu işlenmedi.');
     }
-    $mailbox = sprintf('{%s:%d/imap/ssl/novalidate-cert}%s', $config['host'], (int)$config['port'], $config['folder']);
+    // Do not use novalidate-cert: inbound customer mail must fail closed if the
+    // IMAP server certificate cannot be verified by the host CA store.
+    $mailbox = sprintf('{%s:%d/imap/ssl}%s', $config['host'], (int)$config['port'], $config['folder']);
     $connection = @imap_open($mailbox, $config['user'], $config['password'], OP_READONLY, 1, ['DISABLE_AUTHENTICATOR'=>'GSSAPI']);
     if ($connection === false) throw new RuntimeException('IMAP bağlantısı kurulamadı. Sunucu, TLS, hesap ve ağ erişimini kontrol edin.');
     try {
