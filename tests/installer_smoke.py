@@ -22,7 +22,7 @@ def main():
             runner.env["INSTALL_TOKEN"] = token
             runner.start(provision_users=False)
             browser = Browser(runner.base)
-            fields = dict(setup_token=token, app_url=runner.base, admin_name="Installer test", admin_email="first-admin@example.test", admin_password=runner.password, admin_password_confirm=runner.password)
+            fields = dict(setup_token=token, app_url=runner.base, business_name="Demo Transport", admin_name="Installer test", admin_email="first-admin@example.test", admin_password=runner.password, admin_password_confirm=runner.password)
             assert browser.get("/install")[0] == 200, "configured installer unavailable"
             assert browser.request("/install", dict(fields, csrf="invalid"))[0] == 419, "installer bypassed CSRF"
             assert not runner.sql("SELECT * FROM users"), "CSRF failure created user"
@@ -38,6 +38,7 @@ def main():
             records = runner.sql("SELECT * FROM users")
             assert status == 200 and "/admin/login" in url and len(records) == 1 and records[0]["role"] == "admin", "first-admin installation failed"
             assert records[0]["password_hash"] != runner.password, "installer stored plaintext password"
+            assert runner.sql("SELECT value FROM settings WHERE key='business_name'")[0]["value"] == "Demo Transport", "installer did not save business identity"
             print("PASS explicit setup creates exactly one hashed first-admin account")
             assert browser.get("/install")[0] == 403, "installer stays enabled after first account"
             assert browser.request("/install", fields)[0] == 403 and len(runner.sql("SELECT * FROM users")) == 1, "installer permitted second account"

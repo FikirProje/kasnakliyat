@@ -29,6 +29,7 @@ function handle_install(): void
     $ready = !in_array(false, $requirements, true);
     $errors = [];
     $adminName = '';
+    $businessName = '';
     $adminEmail = (string)(require ROOT . '/config/site.php')['setup_admin_email'];
     $submittedUrl = $configuredUrl;
     if ($ready) {
@@ -61,11 +62,13 @@ function handle_install(): void
                     $errors[] = 'Kurulum anahtarı doğrulanamadı.';
                 } else {
                     $adminName = is_string($_POST['admin_name'] ?? null) ? trim($_POST['admin_name']) : '';
+                    $businessName = is_string($_POST['business_name'] ?? null) ? trim($_POST['business_name']) : '';
                     $adminEmail = is_string($_POST['admin_email'] ?? null) ? mb_strtolower(trim($_POST['admin_email'])) : '';
                     $password = is_string($_POST['admin_password'] ?? null) ? $_POST['admin_password'] : '';
                     $confirmation = is_string($_POST['admin_password_confirm'] ?? null) ? $_POST['admin_password_confirm'] : '';
                     $submittedUrl = is_string($_POST['app_url'] ?? null) ? rtrim(trim($_POST['app_url']), '/') : '';
-                    if ($adminName === '' || mb_strlen($adminName) > 100) $errors[] = 'Adınız 1–100 karakter olmalı.';
+                    if ($adminName === '' || mb_strlen($adminName) > 100) $errors[] = 'Name must be 1–100 characters.';
+                    if ($businessName === '' || mb_strlen($businessName) > 120) $errors[] = 'Business name must be 1–120 characters.';
                     if (!filter_var($adminEmail, FILTER_VALIDATE_EMAIL) || strlen($adminEmail) > 254) $errors[] = 'Geçerli bir yönetici e-postası girin.';
                     if (mb_strlen($password) < 12 || strlen($password) > 72 || str_contains($password, "\0")) $errors[] = 'Parola en az 12 karakter ve en fazla 72 bayt olmalı.';
                     if (!hash_equals($password, $confirmation)) $errors[] = 'Parola tekrarı eşleşmiyor.';
@@ -80,6 +83,7 @@ function handle_install(): void
                             // simultaneous first-run submissions cannot add admins.
                             if ((int) row('SELECT count(*) AS n FROM users')['n'] !== 0) throw new RuntimeException('Installation already completed');
                             query("INSERT INTO users(name,email,password_hash,role,created_at) VALUES(?,?,?,'admin',datetime('now'))", [$adminName,$adminEmail,$hash]);
+                            save_setting('business_name',$businessName);
                             audit('installation.completed', 'İlk yönetici oluşturuldu.');
                             db()->exec('COMMIT');
                         } catch (Throwable $error) {
@@ -98,9 +102,9 @@ function handle_install(): void
         }
     }
     ?><!doctype html>
-<html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>İlk kurulum · Kaş Nakliyat</title><link rel="stylesheet" href="/assets/admin.css"></head>
-<body class="installer-body"><main class="installer-shell"><header class="installer-header"><a class="brand" href="/tr/">KAŞ<span>NAKLİYAT</span></a><span class="installer-label">İLK KURULUM</span></header><div class="installer-intro"><p class="eyebrow">YENİ BİR BAŞLANGIÇ</p><h1>Yönetim alanınızı hazırlayın.</h1><p>Sunucu gereksinimlerini doğrulayın ve ilk yönetici hesabınızı oluşturun.</p></div>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Initial setup</title><link rel="stylesheet" href="/assets/admin.css"></head>
+<body class="installer-body"><main class="installer-shell"><header class="installer-header"><a class="brand" href="/en/">TRANSPORT<span>CMS</span></a><span class="installer-label">INITIAL SETUP</span></header><div class="installer-intro"><p class="eyebrow">READY TO CONFIGURE</p><h1>Set up your transport website.</h1><p>Choose your business identity and create the first administrator account.</p></div>
 <?php foreach ($errors as $error): ?><p class="notice error" role="alert"><?= e($error) ?></p><?php endforeach ?>
 <div class="installer-grid"><section class="panel"><h2>Sunucu kontrolü</h2><ul class="installer-checks"><?php foreach ($requirements as $label => $passed): ?><li><span><?= e($label) ?></span><strong class="<?= $passed ? 'check-pass' : 'check-fail' ?>"><?= $passed ? 'Hazır' : 'Eksik' ?></strong></li><?php endforeach ?></ul><p class="muted small">Web sunucusunun kök dizini <code>public/</code> olmalı. Veri dizini web üzerinden erişilebilir olmamalıdır.</p><div class="notice"><strong>Site adresi otomatik algılandı.</strong><p>Kurulum için aşağıdaki erişim adresi kullanılır. Canlıya geçmeden önce <code>.env</code> içindeki <code>APP_URL</code> değerini gerçek HTTPS alan adınız olarak sabitleyin.</p></div><p class="muted small">Bu ekran, ilk hesap oluşturulduğunda kapanır. API ve e-posta hizmetleri yönetim panelinden ayrıca yapılandırılır.</p></section>
-<section class="panel"><h2>İlk yönetici</h2><form method="post" action="/install"><?= csrf_field() ?><label>Site adresi<input type="url" name="app_url" value="<?= e($submittedUrl) ?>" required autocomplete="url"></label><label>Ad soyad<input name="admin_name" value="<?= e($adminName) ?>" maxlength="100" required autocomplete="name"></label><label>Yönetici e-postası<input type="email" name="admin_email" value="<?= e($adminEmail) ?>" maxlength="254" required autocomplete="username"></label><label>Yeni parola<input type="password" name="admin_password" minlength="12" maxlength="72" required autocomplete="new-password"></label><label>Yeni parola tekrar<input type="password" name="admin_password_confirm" minlength="12" maxlength="72" required autocomplete="new-password"></label><label>Kurulum anahtarı<input type="password" name="setup_token" required autocomplete="off"></label><p class="muted small">Sunucudaki <code>INSTALL_TOKEN</code> değerini girin. Kurulum anahtarı ve parolalar bu sayfada tekrar gösterilmez.</p><button type="submit" <?= !$ready ? 'disabled' : '' ?>>İlk yöneticiyi oluştur ↗</button></form></section></div><footer class="installer-footer">Kaş Nakliyat · Bağımsız web platformu</footer></main></body></html><?php
+<section class="panel"><h2>First administrator</h2><form method="post" action="/install"><?= csrf_field() ?><label>Website URL<input type="url" name="app_url" value="<?= e($submittedUrl) ?>" required autocomplete="url"></label><label>Business name<input name="business_name" value="<?= e($businessName) ?>" maxlength="120" required autocomplete="organization"></label><label>Your name<input name="admin_name" value="<?= e($adminName) ?>" maxlength="100" required autocomplete="name"></label><label>Administrator email<input type="email" name="admin_email" value="<?= e($adminEmail) ?>" maxlength="254" required autocomplete="username"></label><label>Password<input type="password" name="admin_password" minlength="12" maxlength="72" required autocomplete="new-password"></label><label>Confirm password<input type="password" name="admin_password_confirm" minlength="12" maxlength="72" required autocomplete="new-password"></label><label>Installation token<input type="password" name="setup_token" required autocomplete="off"></label><p class="muted small">Enter the server-side <code>INSTALL_TOKEN</code>. Secrets are never shown again.</p><button type="submit" <?= !$ready ? 'disabled' : '' ?>>Create administrator ↗</button></form></section></div><footer class="installer-footer">Transport CMS · Independent website platform</footer></main></body></html><?php
 }
