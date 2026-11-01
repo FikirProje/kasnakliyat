@@ -13,7 +13,7 @@ parser.add_argument("--profile", choices=("deployment", "marketplace"), default=
                     help="deployment keeps the configured demo; marketplace replaces customer brand assets")
 args = parser.parse_args()
 roots = ["src", "public", "templates", "config", "docs", "bin", "tests"]
-files = [ROOT / name for name in ["README.md", "KURULUM.txt", ".env.example", ".gitignore", "storage/.gitkeep"]]
+files = [ROOT / name for name in ["README.md", "KURULUM.txt", "BILGI.md", "CHANGELOG.md", "SUPPORT.md", ".env.example", ".gitignore", "storage/.gitkeep"]]
 for name in roots:
     for path in (ROOT / name).rglob("*"):
         if path.is_symlink():
