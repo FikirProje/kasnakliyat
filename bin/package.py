@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Create an allowlisted deployment ZIP; never include runtime data or credentials."""
 import argparse
+import base64
 from pathlib import Path
 import stat
 import zipfile
@@ -8,6 +9,8 @@ import zipfile
 ROOT = Path(__file__).resolve().parents[1]
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--output", type=Path, required=True)
+parser.add_argument("--profile", choices=("deployment", "marketplace"), default="deployment",
+                    help="deployment keeps the configured demo; marketplace replaces customer brand assets")
 args = parser.parse_args()
 roots = ["src", "public", "templates", "config", "docs", "bin", "tests"]
 files = [ROOT / name for name in ["README.md", "KURULUM.txt", ".env.example", ".gitignore", "storage/.gitkeep"]]
@@ -17,6 +20,24 @@ for name in roots:
             raise SystemExit("Refusing symlink in release: " + str(path))
         if path.is_file() and "__pycache__" not in path.parts and path.suffix != ".pyc":
             files.append(path)
+
+# These supplied/customer-facing assets must never be redistributed in a generic
+# marketplace archive.  The app still receives neutral placeholders below so a
+# buyer can complete the installer before replacing their brand media.
+marketplace_excluded = {
+    "public/assets/hero.webp", "public/assets/hero-mobile.webp",
+    "public/assets/logo.svg", "public/assets/logo-light.svg", "public/assets/logo-monochrome.svg", "public/assets/logo-white.svg",
+    "public/assets/brand.svg", "public/assets/favicon.svg", "public/assets/favicon-32.png",
+    "public/assets/icon-192.png", "public/assets/apple-touch-icon.png", "public/assets/share-card.png",
+    "public/assets/share-card.svg", "public/assets/social-square.png", "public/assets/social-story.png",
+    "config/site.php",
+}
+if args.profile == "marketplace":
+    files = [path for path in files if str(path.relative_to(ROOT)) not in marketplace_excluded]
+
+GENERIC_LOGO = b'''<svg xmlns="http://www.w3.org/2000/svg" width="430" height="80" viewBox="0 0 430 80" role="img"><rect width="64" height="64" x="4" y="8" rx="17" fill="#0D2E42"/><path d="M16 46h40V31H25a9 9 0 0 0-9 9z" fill="#fff"/><circle cx="30" cy="50" r="6" fill="#FF9149"/><circle cx="52" cy="50" r="6" fill="#FF9149"/><text x="87" y="45" fill="#0D2E42" font-family="system-ui,sans-serif" font-size="30" font-weight="800">TRANSPORT CMS</text><text x="89" y="64" fill="#58716e" font-family="system-ui,sans-serif" font-size="10" font-weight="600" letter-spacing="3">YOUR BUSINESS NAME</text></svg>'''
+GENERIC_LOGO_LIGHT = GENERIC_LOGO.replace(b'fill="#0D2E42" font-family', b'fill="#fff" font-family').replace(b'fill="#58716e"', b'fill="#c9d8d3"')
+TRANSPARENT_PNG = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScL0bQAAAABJRU5ErkJggg==")
 args.output.parent.mkdir(parents=True, exist_ok=True)
 with zipfile.ZipFile(args.output, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
     for path in sorted(files):
@@ -26,6 +47,13 @@ with zipfile.ZipFile(args.output, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as
         mode = 0o755 if path.stat().st_mode & stat.S_IXUSR else 0o644
         info.external_attr = (stat.S_IFREG | mode) << 16
         archive.writestr(info, path.read_bytes(), compress_type=zipfile.ZIP_DEFLATED, compresslevel=9)
+    if args.profile == "marketplace":
+        for name in ("public/assets/logo.svg", "public/assets/brand.svg", "public/assets/favicon.svg", "public/assets/logo-monochrome.svg", "public/assets/logo-white.svg"):
+            archive.writestr(name, GENERIC_LOGO, compress_type=zipfile.ZIP_DEFLATED)
+        archive.writestr("public/assets/logo-light.svg", GENERIC_LOGO_LIGHT, compress_type=zipfile.ZIP_DEFLATED)
+        for name in ("public/assets/favicon-32.png", "public/assets/icon-192.png", "public/assets/apple-touch-icon.png", "public/assets/share-card.png", "public/assets/social-square.png", "public/assets/social-story.png"):
+            archive.writestr(name, TRANSPARENT_PNG, compress_type=zipfile.ZIP_DEFLATED)
+        archive.writestr("config/site.php", b"<?php\nreturn [];\n", compress_type=zipfile.ZIP_DEFLATED)
 with zipfile.ZipFile(args.output) as archive:
     assert archive.testzip() is None
     for name in archive.namelist():
