@@ -11,10 +11,10 @@ try {
         throw new InvalidArgumentException('Usage: php bin/worker.php [all|ai|mail|inbox]');
     }
     $result = [];
-    if ($mode !== 'mail') {
+    if (in_array($mode, ['all','ai'], true)) {
         $result['ai'] = process_ai_jobs(3);
     }
-    if ($mode !== 'ai') {
+    if (in_array($mode, ['all','mail'], true)) {
         $result['mail'] = send_mail_queue(10);
     }
     if (in_array($mode, ['all','inbox'], true)) {
