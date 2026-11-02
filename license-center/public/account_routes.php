@@ -13,6 +13,10 @@ if (!is_dir($sessionPath)) mkdir($sessionPath, 0700, true);
 session_save_path($sessionPath);
 if (session_status() !== PHP_SESSION_ACTIVE) session_start();
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array($path, ['/account/login', '/account/register', '/account/forgot-password'], true)) {
+    rate_limit('buyer-auth:'.($path).':'.($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 10, 600);
+}
+
 // The sales centre must not load analytics before an explicit visitor choice.
 ob_start(static function (string $html): string {
     $accepted = ($_COOKIE['lc_cookie_consent'] ?? '') === 'accepted';
