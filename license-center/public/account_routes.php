@@ -53,6 +53,30 @@ ob_start(static function (string $html): string {
     foreach ($translations[$lang] ?? [] as $from => $to) {
         $html = str_replace($from, $to, $html);
     }
+    if ($lang === 'tr') {
+        $buyerTranslations = [
+            'Dashboard'=>'Panel','Support'=>'Destek','Profile'=>'Profil','Security'=>'Güvenlik','Sign out'=>'Çıkış yap',
+            'Licences'=>'Lisanslar','Orders'=>'Siparişler','Requests'=>'Talepler','Health'=>'Sistem sağlığı','Settings'=>'Ayarlar',
+            'Licence service'=>'Lisans merkezi','Active licences'=>'Aktif lisanslar','Bound domains'=>'Bağlı alan adları',
+            'Published themes'=>'Yayınlanan temalar','Orders and invoices'=>'Siparişler ve faturalar','Downloads'=>'İndirmeler',
+            'Products & licences'=>'Ürünler ve lisanslar','Licences and domains'=>'Lisanslar ve alan adları',
+            'Customer support queue'=>'Müşteri destek kuyruğu','Purchase request queue'=>'Satın alma talepleri',
+            'System health'=>'Sistem sağlığı','Sales centre health'=>'Satış merkezi sağlığı',
+            'Create buyer account'=>'Müşteri hesabı oluştur','Forgot your password?'=>'Şifrenizi mi unuttunuz?',
+            'Create a new password'=>'Yeni parola oluştur','Email'=>'E-posta','Password'=>'Parola',
+            'New password'=>'Yeni parola','Confirm password'=>'Parolayı doğrula','Save new password'=>'Yeni parolayı kaydet',
+            'Send reset link'=>'Sıfırlama bağlantısı gönder','Back to sign in'=>'Girişe dön',
+            'Resend verification link'=>'Doğrulama bağlantısını yeniden gönder','Email not verified.'=>'E-posta doğrulanmadı.',
+            'Welcome, '=>'Hoş geldiniz, ','Invoice not found'=>'Fatura bulunamadı','Download unavailable'=>'İndirme kullanılamıyor',
+            'Theme version history'=>'Tema sürüm geçmişi','Publishable themes'=>'Yayınlanabilir temalar',
+            'Save settings'=>'Ayarları kaydet','Sales settings'=>'Satış ayarları','Save theme'=>'Temayı kaydet',
+            'Create licence'=>'Lisans oluştur','Unbind a domain'=>'Alan adı bağlantısını kaldır','Refund'=>'İade',
+            'Only necessary'=>'Yalnızca gerekli','Accept analytics'=>'Analitiği kabul et'
+        ];
+        foreach ($buyerTranslations as $from => $to) {
+            $html = str_replace($from, $to, $html);
+        }
+    }
     $html = strtr($html, $protected);
     $html = str_replace('</style>', '.locale-select select{font:600 12px Poppins,Arial;background:#ffffff18;color:#fff;border:1px solid #ffffff44;border-radius:8px;padding:8px 28px 8px 10px;max-width:150px}.locale-select option{color:#08283a;background:#fff}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}', $html);
     $accepted = ($_COOKIE['lc_cookie_consent'] ?? '') === 'accepted';
