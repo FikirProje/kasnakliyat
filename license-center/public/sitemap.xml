@@ -3,6 +3,9 @@
   <url><loc>https://product.tofidesk.com/shop</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
   <url><loc>https://product.tofidesk.com/pricing</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://product.tofidesk.com/blog</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://product.tofidesk.com/privacy</loc><changefreq>yearly</changefreq><priority>0.4</priority></url>
+  <url><loc>https://product.tofidesk.com/terms</loc><changefreq>yearly</changefreq><priority>0.4</priority></url>
+  <url><loc>https://product.tofidesk.com/support-policy</loc><changefreq>yearly</changefreq><priority>0.4</priority></url>
   <url><loc>https://product.tofidesk.com/shop?lang=tr</loc></url>
   <url><loc>https://product.tofidesk.com/shop?lang=en</loc></url>
   <url><loc>https://product.tofidesk.com/shop?lang=de</loc></url>
