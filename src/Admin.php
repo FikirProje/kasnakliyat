@@ -238,7 +238,8 @@ function handle_admin(string $path): void
         redirect($destination);
     }
     if ($section === 'logout') { http_response_code(405); header('Allow: POST'); return; }
-    $titles=['dashboard'=>'Genel bakış','requests'=>'Teklif talepleri','appointments'=>'Randevu takvimi','content'=>'İçerik stüdyosu','editor'=>'Dil editörü','media'=>'Görsel kütüphanesi','gallery'=>'Galeri','seo'=>'SEO merkezi','settings'=>'İşletme ve entegrasyonlar','email-templates'=>'E-posta şablonları','notification-rules'=>'Bildirim kuralları','integrations'=>'Entegrasyon merkezi','security'=>'Hesap güvenliği','users'=>'Kullanıcılar','jobs'=>'Yapay zekâ işleri','audit'=>'İşlem kayıtları','backup'=>'Yedekleme','mail'=>'E-posta kuyruğu','languages'=>'Dil paketleri','themes'=>'Tema kütüphanesi','licenses'=>'Lisans'];
+    $titles=array_fill_keys(['dashboard','requests','appointments','content','editor','media','gallery','seo','settings','email-templates','notification-rules','integrations','security','users','jobs','audit','backup','mail','languages','themes','licenses'], '');
+    foreach (array_keys($titles) as $key) $titles[$key]=admin_section_title($key, admin_user_lang($user));
     ob_start();
     match($section) {
         'requests','appointments' => admin_requests_page($section),
