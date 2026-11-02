@@ -13,7 +13,7 @@
 
 1. Upload the new release beside the current release.
 2. Copy only the deployment `.env` and customer-owned storage into the new release.
-3. Run the installer/upgrade entry point once. Database migrations are transactional and recorded in the `migrations` table.
+3. Do not run `/install` for a normal release. Open the admin panel's **Güncellemeler** page, run the preflight check, download the signed release, and approve **Yedekle ve uygula**. The updater enters maintenance mode, creates a database/media backup, applies the new files, runs pending migrations transactionally, verifies the target migration level, and clears maintenance mode only after success.
 4. Sign in to Admin and verify the selected locale, theme, media, SMTP queue and scheduled content.
 5. Open the public site in one LTR locale and one RTL locale, then run the integration and smoke tests.
 
