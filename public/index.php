@@ -26,7 +26,14 @@ if (PHP_SAPI === 'cli-server' && str_starts_with($path, '/assets/') && !str_cont
     $file = realpath(__DIR__ . $path);
     if ($file && str_starts_with($file, __DIR__ . '/assets/') && is_file($file)) return false;
 }
-require dirname(__DIR__) . '/src/bootstrap.php';
+try {
+    require dirname(__DIR__) . '/src/bootstrap.php';
+} catch (Throwable $exception) {
+    http_response_code(503);
+    $detail = htmlspecialchars($exception->getMessage(), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    echo '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TofiDesk kurulum tanılama</title><style>body{font:16px/1.6 system-ui;background:#092b3d;color:#153346;margin:0;padding:28px}.card{max-width:780px;margin:8vh auto;background:#f7faf8;border-radius:18px;padding:34px}h1{color:#08283a}code{display:block;background:#edf3f0;padding:14px;border-radius:8px;white-space:pre-wrap;overflow-wrap:anywhere;color:#7a241b}</style><main class="card"><strong>TOFIDESK</strong><h1>Kurulum tanılaması gerekli</h1><p>PHP sürümü uygun, ancak uygulama başlangıcında veritabanı veya dosya sistemi hatası oluştu. Plesk hata günlüğündeki kayıtla karşılaştırın.</p><code>'.$detail.'</code><p>Kontrol: <b>storage</b> yazma izni, SQLite/PDO SQLite uzantıları ve httpdocs içindeki dosya bütünlüğü.</p></main>';
+    exit;
+}
 try {
     if (rtrim($path, '/') === '/install' && function_exists('handle_install')) { handle_install(); exit; }
     if (!row("SELECT name FROM sqlite_master WHERE type='table' AND name='migrations'")) render_error(503, 'Uygulama kurulumu tamamlanmadı.');
