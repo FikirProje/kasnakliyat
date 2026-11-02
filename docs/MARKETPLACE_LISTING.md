@@ -20,7 +20,7 @@ Self-hosted PHP website and operations panel for moving, logistics and transport
 
 ## Requirements
 
-PHP 8.2+, PDO SQLite, mbstring, fileinfo, cURL, OpenSSL, GD with WebP support and zlib. A HTTPS web server must serve `public/` as its document root.
+PHP 8.2+, PDO SQLite, mbstring, fileinfo, cURL, OpenSSL, GD with WebP support and zlib. The recommended HTTPS document root is `public/`; cPanel/Plesk `httpdocs` root deployment is also supported through the included root `.htaccess` protections.
 
 ## Included documentation
 
