@@ -1,11 +1,15 @@
 Options -Indexes
 DirectoryIndex index.php
 RewriteEngine On
+RewriteRule ^(?:storage|bin|docs|tests|work)(?:/|$) - [F,L]
 RewriteRule ^install$ public/installer.php [L]
 RewriteRule ^assets(/.*)?$ public/$0 [L]
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^ index.php [QSA,L]
 <FilesMatch "^\.|\.sqlite$">
+Require all denied
+</FilesMatch>
+<FilesMatch "\.(?:sqlite-shm|sqlite-wal|log)$">
 Require all denied
 </FilesMatch>
