@@ -31,7 +31,7 @@ function update_archive_copy(string $source,string $destination): void
 function update_apply(string $version,string $minPhp='',int $migrationRequired=0): string
 {
     if($minPhp!==''&&version_compare(PHP_VERSION,$minPhp,'<'))throw new RuntimeException('Bu güncelleme PHP '.$minPhp.' veya üzerini gerektiriyor.');
-    $currentMigration=(int)setting('migration_version',envv('MIGRATION_VERSION','1')); if($migrationRequired>0&&$currentMigration<$migrationRequired)throw new RuntimeException('Bu paket için gereken migration sürümü mevcut değil.');
+    $currentMigration=(int)(row('SELECT COALESCE(MAX(version),0) AS version FROM migrations')['version']??0); if($migrationRequired>0&&$currentMigration<$migrationRequired)throw new RuntimeException('Bu paket için gereken migration sürümü mevcut değil.');
     $zipPath=storage_path('update-'.$version.'.zip'); if(!is_file($zipPath))throw new RuntimeException('Önce güncelleme paketini indirin.');
     $staging=storage_path('update-staging-'.$version); $rollback=storage_path('update-rollback-'.$version); if(is_dir($staging))integration_remove_tree($staging);if(is_dir($rollback))throw new RuntimeException('Bu sürüm için geri alma kaydı zaten mevcut.');
     $zip=new ZipArchive();if($zip->open($zipPath)!==true)throw new RuntimeException('Güncelleme ZIP dosyası açılamadı.');
@@ -40,6 +40,6 @@ function update_apply(string $version,string $minPhp='',int $migrationRequired=0
     $root=$staging; if(is_dir($staging.'/httpdocs'))$root=$staging.'/httpdocs'; elseif(is_dir($staging.'/app'))$root=$staging.'/app';
     if(!is_file($root.'/src/bootstrap.php')&&!is_file($root.'/index.php')){integration_remove_tree($staging);throw new RuntimeException('Paket uygulama kökü doğrulanamadı.');}
     $backup=create_backup(); update_archive_copy(ROOT,$rollback); file_put_contents(storage_path('maintenance.flag'),gmdate('c'),LOCK_EX);
-    try { update_archive_copy($root,ROOT); save_setting('app_version',$version); audit('update.applied',$version); @unlink($zipPath); integration_remove_tree($staging); @unlink(storage_path('maintenance.flag')); return $backup; }
+    try { update_archive_copy($root,ROOT); migrate(); save_setting('app_version',$version); audit('update.applied',$version); @unlink($zipPath); integration_remove_tree($staging); @unlink(storage_path('maintenance.flag')); return $backup; }
     catch(Throwable $e){ if(is_dir($rollback))update_archive_copy($rollback,ROOT);@unlink(storage_path('maintenance.flag'));throw $e; }
 }
