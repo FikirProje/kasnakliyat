@@ -1,5 +1,9 @@
 <?php
 ob_start(static function (string $html) use ($lang): string {
+    $brand = trim((string)setting('business_name', 'Transport CMS'));
+    if ($brand !== '') {
+        $html = str_replace(['Kaş Nakliyat', 'KAŞ NAKLİYAT'], [e($brand), e($brand)], $html);
+    }
     $profiles = [
         'facebook_url' => ['Facebook', 'Facebook'],
         'instagram_url' => ['Instagram', 'Instagram'],
