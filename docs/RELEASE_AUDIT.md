@@ -44,3 +44,5 @@ Audit date: 2026-11-02. This is an evidence-based release gate, not a marketing 
 ## Marketplace release decision
 
 **Do not submit the current checkout as a generic marketplace archive.** It is suitable as the Kaş Nakliyat branded deployment baseline. Close the P0 gates, then create and validate a separate generic release artifact before submission.
+
+Implementation note: public social profile links are now validated and rendered as accessible footer links; missing or invalid profile URLs are omitted.
