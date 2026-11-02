@@ -41,7 +41,9 @@ Bu görev zaten yalıtılmıştır. Mevcut checkout'u kullanın; kullanıcı öz
 
 ## AI ve e-posta
 
-`.env` veya sunucu ortamına `AI_API_KEY` ekleyin. Anahtar tarayıcıya veya ayarlar tablosuna yazılmaz. Yönetim panelinde sağlayıcı **OpenAI**, model ve içerik yönergeleri seçilebilir. `write`, `improve`, `localize` ve makaleye özgü kapak üretimi desteklenir. Metin için Chat Completions JSON çıktısı, görsel için `gpt-image-1` kullanılır. Ücretli API çağrıları yalnız iş işlenirken yapılır; anahtar yoksa başarısız iş kaydı oluşur. Çıktı ve sağlayıcının kullanım bilgisi korunur; hesaplanan maliyet bilinmiyorsa sıfır gibi gösterilmez. Bağlantı/hız sınırı hataları yayındaki metinleri silmez.
+`.env` veya sunucu ortamına `AI_API_KEY` ekleyin. Anahtar tarayıcıya veya ayarlar tablosuna yazılmaz. Yönetim panelinde sağlayıcı, model ve içerik yönergeleri seçilebilir. `write`, `improve`, `localize` ve makaleye özgü kapak üretimi desteklenir. Metin için Chat Completions JSON çıktısı, görsel için `gpt-image-1` kullanılır. Ücretli API çağrıları yalnız iş işlenirken yapılır; anahtar yoksa başarısız iş kaydı oluşur. Çıktı ve sağlayıcının kullanım bilgisi korunur; hesaplanan maliyet bilinmiyorsa sıfır gibi gösterilmez. Bağlantı/hız sınırı hataları yayındaki metinleri silmez.
+
+OpenAI uyumlu servisler için yönetim panelinden `compatible` sağlayıcısını seçin ve sunucu ortamında `AI_BASE_URL` tanımlayın. Örnekler: `https://openrouter.ai/api`, `https://api.together.xyz` veya yerel Ollama için `http://127.0.0.1:11434/v1`. Gerekirse `AI_API_KEY` sağlayıcının anahtarıdır; yerel anahtarsız servislerde boş bırakılabilir. `AI_BASE_URL` yalnızca güvenilen bir yönetici tarafından yapılandırılmalı ve üretimde HTTPS tercih edilmelidir.
 
 Sunucuda `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` sağlayın. Parola dışındaki alanlar yönetim panelinde de ayarlanabilir; ortam değişkenleri önceliklidir. Uzak SMTP için doğrulanmış STARTTLS veya 465/TLS zorunludur. Şifresiz yerel relay yalnız `SMTP_ALLOW_INSECURE_LOCAL=1` ile loopback üzerinde kullanılabilir. Gönderimler UTF-8 düz metindir.
 
