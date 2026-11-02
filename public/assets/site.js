@@ -19,6 +19,12 @@ document.querySelectorAll('[data-cookie-accept]').forEach((button) => {
     button.closest('[data-cookie-consent]')?.remove();
   });
 });
+document.querySelectorAll('[data-cookie-necessary]').forEach((button) => {
+  button.addEventListener('click', () => {
+    document.cookie = 'tofidesk_cookie_consent=essential; Max-Age=31536000; Path=/; SameSite=Lax' + (location.protocol === 'https:' ? '; Secure' : '');
+    button.closest('[data-cookie-consent]')?.remove();
+  });
+});
 document.querySelectorAll('form').forEach(form => form.addEventListener('submit', () => {
   if (form.checkValidity()) { const button = form.querySelector('button[type="submit"]'); if (button) { button.disabled = true; button.setAttribute('aria-busy','true'); } }
 }));

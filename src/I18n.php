@@ -1431,6 +1431,7 @@ function t(string $key, string $lang): string
         'sla_text'=>['tr'=>'Destek talepleri iş günlerinde incelenir. İlk yanıt hedefi iki iş günüdür; acil durumlar ve üçüncü taraf sağlayıcı kesintileri bu hedefin dışındadır.','en'=>'Support requests are reviewed on business days. The target for a first response is two business days; emergencies and third-party outages are outside this target.'],
         'cookie_notice'=>['tr'=>'İsteğe bağlı analiz çerezlerini yalnızca onayınızla kullanırız. Zorunlu oturum ve güvenlik çerezleri her zaman etkindir.','en'=>'Optional analytics cookies are used only with your consent. Essential session and security cookies remain enabled.'],
         'cookie_accept'=>['tr'=>'Kabul et','en'=>'Accept'],
+        'cookie_necessary'=>['tr'=>'Sadece gerekli','en'=>'Only necessary'],
     ];
     if (isset($legal[$key][$lang])) return $legal[$key][$lang];
     if (isset($legal[$key]['en'])) return $legal[$key]['en'];
