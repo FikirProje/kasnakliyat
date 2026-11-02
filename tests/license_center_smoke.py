@@ -17,6 +17,8 @@ assert "storage/outbox" in ACCOUNT_ROUTES, "test-mode outbox missing"
 assert "error_log" not in ACCOUNT_ROUTES, "account tokens must never be written to logs"
 assert "buyer-auth:" in ACCOUNT_ROUTES and "rate_limit" in ACCOUNT_ROUTES, "buyer auth rate limiting missing"
 assert "license_plan_domain_limit" in ACCOUNT_ROUTES and "Agency" in ACCOUNT_ROUTES and "Studio" in ACCOUNT_ROUTES, "plan domain entitlements missing"
+assert "locale-select" in ACCOUNT_ROUTES and "onchange=\"if(this.value)location.href=this.value\"" in ACCOUNT_ROUTES, "modern locale selector missing"
+assert "Taşımacılık işletme platformu" in ACCOUNT_ROUTES and "Dahil edilen yazılım özellikleri" in ACCOUNT_ROUTES, "Turkish storefront copy missing"
 assert "lc_cookie_consent" in ACCOUNT_ROUTES and "data-lc-cookie" in ACCOUNT_ROUTES, "sales cookie consent missing"
 assert "googletagmanager" in INDEX and "lc_cookie_consent" in ACCOUNT_ROUTES, "sales analytics consent gate missing"
 for metric in ["orders", "revenue", "downloads", "webhook_errors"]:
