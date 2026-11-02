@@ -177,6 +177,11 @@ function deliver_notification(string $channel, string $provider, string $recipie
         if(envv('NETGSM_USER')===''||envv('NETGSM_PASSWORD')===''||envv('NETGSM_HEADER')==='') throw new RuntimeException('NetGSM ayarları eksik.');
         $post('https://api.netgsm.com.tr/sms/rest/v2/send',json_encode(['msgheader'=>envv('NETGSM_HEADER'),'messages'=>[['msg'=>$message,'no'=>$recipient]]],JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR),['Content-Type: application/json','Authorization: Basic '.base64_encode(envv('NETGSM_USER').':'.envv('NETGSM_PASSWORD'))]); return;
     }
+    if($channel==='sms'&&$provider==='iletimerkezi') {
+        $key=envv('ILETIMERKEZI_API_KEY');$hash=envv('ILETIMERKEZI_API_HASH');$sender=envv('ILETIMERKEZI_SENDER','APITEST');
+        if($key===''||$hash===''||$sender==='') throw new RuntimeException('İleti Merkezi ayarları eksik.');
+        $post('https://api.iletimerkezi.com/v1/send-sms/json',json_encode(['request'=>['authentication'=>['key'=>$key,'hash'=>$hash],'order'=>['sender'=>$sender,'iys'=>'0','message'=>['text'=>$message,'receipents'=>['number'=>[$recipient]]]]]],JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR),['Content-Type: application/json']); return;
+    }
     throw new RuntimeException('Seçili sağlayıcı için adaptör veya gerekli ayarlar bulunamadı.');
 }
 
@@ -188,7 +193,7 @@ function send_notification_queue(int $limit = 10): array
         if (!$item) break;
         $provider = $item['channel']==='sms' ? setting('sms_provider','none') : setting('whatsapp_provider','none');
         $configured = $item['channel']==='sms'
-            ? (($provider==='netgsm' && envv('NETGSM_USER')!=='' && envv('NETGSM_PASSWORD')!=='' && envv('NETGSM_HEADER')!=='') || ($provider==='iletimerkezi' && envv('ILETIMERKEZI_API_KEY')!=='') || ($provider==='twilio' && envv('TWILIO_ACCOUNT_SID')!=='' && envv('TWILIO_AUTH_TOKEN')!==''))
+            ? (($provider==='netgsm' && envv('NETGSM_USER')!=='' && envv('NETGSM_PASSWORD')!=='' && envv('NETGSM_HEADER')!=='') || ($provider==='iletimerkezi' && envv('ILETIMERKEZI_API_KEY')!=='' && envv('ILETIMERKEZI_API_HASH')!=='' && envv('ILETIMERKEZI_SENDER')!=='') || ($provider==='twilio' && envv('TWILIO_ACCOUNT_SID')!=='' && envv('TWILIO_AUTH_TOKEN')!==''))
             : (($provider==='cloud' && envv('WHATSAPP_ACCESS_TOKEN')!=='') || ($provider==='twilio' && envv('TWILIO_ACCOUNT_SID')!=='' && envv('TWILIO_AUTH_TOKEN')!==''));
         try { if(!$configured) throw new RuntimeException('Sağlayıcı anahtarı eksik; güvenli test modu.'); deliver_notification($item['channel'],$provider,$item['recipient'],$item['message']); query("UPDATE notification_queue SET status='sent',claimed_at=NULL,last_error='' WHERE id=?",[$item['id']]); $counts['sent']++; }
         catch(Throwable $error) { query("UPDATE notification_queue SET status='failed',claimed_at=NULL,last_error=? WHERE id=?",[mb_substr($error->getMessage(),0,800),$item['id']]); $counts['failed']++; }
