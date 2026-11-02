@@ -37,7 +37,7 @@ try {
         if (!totp_valid($secret, $code)) throw new RuntimeException('Verification failed. Existing 2FA unchanged.');
         query('UPDATE users SET totp_secret=? WHERE id=?', [$secret,$user['id']]); audit('user.2fa.enabled.cli',(string)$user['id']); echo "Two-factor authentication enabled.\n";
     } elseif ($command === 'worker') {
-        echo json_encode(['ai'=>process_ai_jobs(3),'mail'=>send_mail_queue(10)], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . "\n";
+        echo json_encode(['ai'=>process_ai_jobs(3),'mail'=>send_mail_queue(10),'notifications'=>send_notification_queue(10)], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . "\n";
     } elseif ($command === 'backup') { echo create_backup() . "\n"; }
     elseif ($command === 'check') {
         foreach (['pdo_sqlite','mbstring','fileinfo','curl','openssl','gd','zlib'] as $extension) if (!extension_loaded($extension)) throw new RuntimeException('Missing extension: '.$extension);
