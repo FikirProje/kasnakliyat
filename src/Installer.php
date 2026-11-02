@@ -1,16 +1,12 @@
 <?php
 declare(strict_types=1);
 
-/** First-run only: enabled by an out-of-band token, closed after the first account. */
+/** First-run only: open on a fresh database and closed after the first account. */
 function handle_install(): void
 {
     header('Cache-Control: no-store');
     header('X-Robots-Tag: noindex, nofollow');
     $installLang = installer_locale();
-    $configuredToken = envv('INSTALL_TOKEN');
-    if (strlen($configuredToken) < 32) {
-        render_error(404, 'Kurulum ekranı etkin değil.');
-    }
     $requirements = [
         'PHP 8.2 veya üzeri' => PHP_VERSION_ID >= 80200,
         'SQLite / PDO' => extension_loaded('pdo_sqlite'),
@@ -59,11 +55,7 @@ function handle_install(): void
                 http_response_code(429);
                 $errors[] = 'Kurulum deneme sınırına ulaşıldı. 15 dakika sonra yeniden deneyin.';
             } else {
-                $providedToken = is_string($_POST['setup_token'] ?? null) ? $_POST['setup_token'] : '';
-                if (!hash_equals($configuredToken, $providedToken)) {
-                    http_response_code(403);
-                    $errors[] = 'Kurulum anahtarı doğrulanamadı.';
-                } else {
+                {
                     $adminName = is_string($_POST['admin_name'] ?? null) ? trim($_POST['admin_name']) : '';
                     $businessName = is_string($_POST['business_name'] ?? null) ? trim($_POST['business_name']) : '';
                     $countryCode = strtoupper(is_string($_POST['country_code'] ?? null) ? trim($_POST['country_code']) : 'TR');
@@ -100,13 +92,12 @@ function handle_install(): void
                             error_log('First administrator creation failed: '.get_class($error));
                             render_error(409, 'İlk yönetici oluşturulamadı veya kurulum başka bir oturumda tamamlandı. Yönetim girişini kontrol edin.');
                         }
-                        unset($password, $confirmation, $providedToken, $configuredToken);
-                        flash('success', 'İlk yönetici oluşturuldu. Giriş yapabilirsiniz. Sunucu ayarlarından INSTALL_TOKEN değerini kaldırın; kurulum ekranı artık kapalı.');
+                        unset($password, $confirmation);
+                        flash('success', 'İlk yönetici oluşturuldu. Giriş yapabilirsiniz.');
                         redirect('/admin/login');
                     }
                     unset($password, $confirmation);
                 }
-                unset($providedToken);
             }
         }
     }
@@ -115,5 +106,5 @@ function handle_install(): void
 <body class="installer-body"><main class="installer-shell"><header class="installer-header"><a class="brand" href="/<?=e($installLang)?>/">TRANSPORT<span>CMS</span></a><span class="installer-label"><?=e(installer_t('label',$installLang))?></span></header><div class="installer-intro"><p class="eyebrow"><?=e(installer_t('eyebrow',$installLang))?></p><h1><?=e(installer_t('heading',$installLang))?></h1><p><?=e(installer_t('intro',$installLang))?></p></div>
 <?php foreach ($errors as $error): ?><p class="notice error" role="alert"><?= e($error) ?></p><?php endforeach ?>
 <div class="installer-grid"><section class="panel"><h2><?=e(installer_t('server',$installLang))?></h2><ul class="installer-checks"><?php foreach ($requirements as $label => $passed): ?><li><span><?= e($label) ?></span><strong class="<?= $passed ? 'check-pass' : 'check-fail' ?>"><?= e(installer_t($passed?'ready':'missing',$installLang)) ?></strong></li><?php endforeach ?></ul><p class="muted small"><?=e(installer_t('storage_hint',$installLang))?></p><div class="notice"><p><?=e(installer_t('url_notice',$installLang))?></p></div><p class="muted small"><?=e(installer_t('closed',$installLang))?></p></section>
-<section class="panel"><h2><?=e(installer_t('first_admin',$installLang))?></h2><form method="post" action="/install"><input type="hidden" name="installer_lang" value="<?=e($installLang)?>"><?= csrf_field() ?><label><?=e(installer_t('language',$installLang))?><select onchange="location.search='?lang='+encodeURIComponent(this.value)"><?php foreach(core_locales() as $code=>$name): ?><option value="<?=e($code)?>" <?=$code===$installLang?'selected':''?>><?=e($name)?></option><?php endforeach ?></select></label><label><?=e(installer_t('website_url',$installLang))?><input type="url" name="app_url" value="<?= e($submittedUrl) ?>" required autocomplete="url"></label><label><?=e(installer_t('business',$installLang))?><input name="business_name" value="<?= e($businessName) ?>" maxlength="120" required autocomplete="organization"></label><label><?=e(installer_t('your_name',$installLang))?><input name="admin_name" value="<?= e($adminName) ?>" maxlength="100" required autocomplete="name"></label><label><?=e(installer_t('admin_email',$installLang))?><input type="email" name="admin_email" value="<?= e($adminEmail) ?>" maxlength="254" required autocomplete="username"></label><label><?=e(installer_t('password',$installLang))?><input type="password" name="admin_password" minlength="12" maxlength="72" required autocomplete="new-password"></label><label><?=e(installer_t('confirm',$installLang))?><input type="password" name="admin_password_confirm" minlength="12" maxlength="72" required autocomplete="new-password"></label><label><?=e(installer_t('token',$installLang))?><input type="password" name="setup_token" required autocomplete="off"></label><p class="muted small"><?=e(installer_t('token_hint',$installLang))?></p><button type="submit" <?= !$ready ? 'disabled' : '' ?>><?=e(installer_t('submit',$installLang))?> ↗</button></form></section></div><footer class="installer-footer"><?=e(installer_t('footer',$installLang))?></footer></main></body></html><?php
+<section class="panel"><h2><?=e(installer_t('first_admin',$installLang))?></h2><form method="post" action="/install"><input type="hidden" name="installer_lang" value="<?=e($installLang)?>"><?= csrf_field() ?><label><?=e(installer_t('language',$installLang))?><select onchange="location.search='?lang='+encodeURIComponent(this.value)"><?php foreach(core_locales() as $code=>$name): ?><option value="<?=e($code)?>" <?=$code===$installLang?'selected':''?>><?=e($name)?></option><?php endforeach ?></select></label><label><?=e(installer_t('website_url',$installLang))?><input type="url" name="app_url" value="<?= e($submittedUrl) ?>" required autocomplete="url"></label><label><?=e(installer_t('business',$installLang))?><input name="business_name" value="<?= e($businessName) ?>" maxlength="120" required autocomplete="organization"></label><label><?=e(installer_t('your_name',$installLang))?><input name="admin_name" value="<?= e($adminName) ?>" maxlength="100" required autocomplete="name"></label><label><?=e(installer_t('admin_email',$installLang))?><input type="email" name="admin_email" value="<?= e($adminEmail) ?>" maxlength="254" required autocomplete="username"></label><label><?=e(installer_t('password',$installLang))?><input type="password" name="admin_password" minlength="12" maxlength="72" required autocomplete="new-password"></label><label><?=e(installer_t('confirm',$installLang))?><input type="password" name="admin_password_confirm" minlength="12" maxlength="72" required autocomplete="new-password"></label><button type="submit" <?= !$ready ? 'disabled' : '' ?>><?=e(installer_t('submit',$installLang))?> ↗</button></form></section></div><footer class="installer-footer"><?=e(installer_t('footer',$installLang))?></footer></main></body></html><?php
 }
