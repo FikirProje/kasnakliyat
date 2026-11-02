@@ -8,6 +8,7 @@ Bu belge uygulama kodu, tema dağıtımı ve lisans merkezinin birbirine nasıl 
 - Müşteri kurulumu: uygulama kodu, müşteri `.env` dosyası, SQLite veritabanı ve `storage/` verisi. Müşteri verisi lisans merkezine gönderilmez.
 - Tema paketi: yalnızca doğrulanmış data-only payload; PHP çalıştırma, rastgele dosya yazma ve sunucu komutu yok.
 - Güncelleme paketi: imzalı manifest, dosya hash'leri, hedef ürün, minimum PHP sürümü, minimum migration sürümü, changelog ve geri dönüş bilgisi.
+- Paket akışı: admin önce imzalı sürüm kontrolü yapar; lisans/alan adı/kurulum doğrulamasından sonra paket ayrı bir geçici dosyaya indirilir ve SHA-256 özeti eşleşmeden uygulama dizinine dokunulmaz.
 
 ## Uygulama güncelleme akışı
 
