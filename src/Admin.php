@@ -555,6 +555,7 @@ function admin_email_templates_page(): void
 
 function admin_settings_page(): void
 {
+    echo '<p class="notice"><a href="/admin/settings?map=1">Harita Görünümü ayarlarını aç →</a></p>';
     if (($_GET['map'] ?? '') === '1') {
         ?><section class="panel"><h2>Harita Görünümü</h2><p class="muted">İsterseniz Google Maps embed URL’si verin. Boş bırakıldığında adres ayarından harita oluşturulur.</p><form method="post"><?php admin_action('map_settings'); admin_field('HTTPS harita embed adresi','map_embed_url',setting('map_embed_url'),'url'); ?><button>Harita Ayarını Kaydet</button></form><p><a href="/admin/settings">← Ayarlara Dön</a></p></section><?php
         return;
