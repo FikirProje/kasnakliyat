@@ -20,9 +20,10 @@ ob_start(static function (string $html) use ($lang): string {
         $links .= '<a class="social-link" href="'.e($url).'" target="_blank" rel="noopener noreferrer" aria-label="'.e($aria).'">'.e($label).'</a>';
     }
     $legal = '<nav class="legal-links" aria-label="Legal"><a href="/'.e($lang).'/kullanim-sartlari/">'.e(t('terms_title', $lang)).'</a><a href="/'.e($lang).'/destek-sla/">'.e(t('sla_title', $lang)).'</a></nav>';
-    if ($links === '') return str_replace('</footer>', $legal.'</footer>', $html);
+    if ($links === '') { $cookie = isset($_COOKIE['tofidesk_cookie_consent']) ? '' : '<aside class="cookie-consent" data-cookie-consent><span>'.e(t('cookie_notice',$lang)).'</span><button type="button" data-cookie-accept>'.e(t('cookie_accept',$lang)).'</button></aside>'; return str_replace(['</footer>','</body>'], [$legal.'</footer>',$cookie.'</body>'], $html); }
     $block = '<nav class="social-links" aria-label="Social media">'.$links.'</nav>'.$legal;
-    return str_replace('</footer>', $block.'</footer>', $html);
+    $cookie = isset($_COOKIE['tofidesk_cookie_consent']) ? '' : '<aside class="cookie-consent" data-cookie-consent><span>'.e(t('cookie_notice',$lang)).'</span><button type="button" data-cookie-accept>'.e(t('cookie_accept',$lang)).'</button></aside>';
+    return str_replace(['</footer>','</body>'], [$block.'</footer>',''.$cookie.'</body>'], $html);
 });
 ?>
 <!doctype html>

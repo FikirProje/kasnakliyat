@@ -1429,6 +1429,8 @@ function t(string $key, string $lang): string
         'sla_title'=>['tr'=>'Destek ve hizmet seviyesi','en'=>'Support service level','de'=>'Support und Service-Level','fr'=>'Support et niveau de service','es'=>'Soporte y nivel de servicio','it'=>'Supporto e livello di servizio','pt'=>'Suporte e nível de serviço','nl'=>'Ondersteuning en serviceniveau','ru'=>'Поддержка и уровень сервиса','ar'=>'الدعم ومستوى الخدمة','fa'=>'پشتیبانی و سطح خدمات','zh'=>'支持与服务级别','ja'=>'サポートとサービスレベル','ko'=>'지원 및 서비스 수준'],
         'terms_text'=>['tr'=>'Siteyi ve talep formlarını kullanarak verdiğiniz bilgilerin doğru olduğunu, hizmetin kapsam ve fiyatının işletme tarafından onaylanacağını kabul edersiniz.','en'=>'By using this website and its request forms, you confirm that the information you provide is accurate and that service scope and pricing are confirmed by the business.'],
         'sla_text'=>['tr'=>'Destek talepleri iş günlerinde incelenir. İlk yanıt hedefi iki iş günüdür; acil durumlar ve üçüncü taraf sağlayıcı kesintileri bu hedefin dışındadır.','en'=>'Support requests are reviewed on business days. The target for a first response is two business days; emergencies and third-party outages are outside this target.'],
+        'cookie_notice'=>['tr'=>'İsteğe bağlı analiz çerezlerini yalnızca onayınızla kullanırız. Zorunlu oturum ve güvenlik çerezleri her zaman etkindir.','en'=>'Optional analytics cookies are used only with your consent. Essential session and security cookies remain enabled.'],
+        'cookie_accept'=>['tr'=>'Kabul et','en'=>'Accept'],
     ];
     if (isset($legal[$key][$lang])) return $legal[$key][$lang];
     if (isset($legal[$key]['en'])) return $legal[$key]['en'];

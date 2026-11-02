@@ -12,6 +12,13 @@ if (toggle && navigation) {
   }));
   document.addEventListener('keydown', event => { if(event.key === 'Escape') { toggle.setAttribute('aria-expanded', 'false'); navigation.classList.remove('is-open'); } });
 }
+
+document.querySelectorAll('[data-cookie-accept]').forEach((button) => {
+  button.addEventListener('click', () => {
+    document.cookie = 'tofidesk_cookie_consent=accepted; Max-Age=31536000; Path=/; SameSite=Lax' + (location.protocol === 'https:' ? '; Secure' : '');
+    button.closest('[data-cookie-consent]')?.remove();
+  });
+});
 document.querySelectorAll('form').forEach(form => form.addEventListener('submit', () => {
   if (form.checkValidity()) { const button = form.querySelector('button[type="submit"]'); if (button) { button.disabled = true; button.setAttribute('aria-busy','true'); } }
 }));
