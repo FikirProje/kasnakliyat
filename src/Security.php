@@ -16,6 +16,7 @@ function rate_limit(string $bucket, int $limit, int $seconds): bool {
 }
 function current_user(): ?array {
     if (empty($_SESSION['user_id'])) return null;
+    if ((string)($_SESSION['auth_session_epoch'] ?? '') !== setting('auth_session_epoch','1')) { $_SESSION=[]; return null; }
     if (time() - (int)($_SESSION['last_seen'] ?? 0) > 7200) { unset($_SESSION['user_id']); return null; }
     $_SESSION['last_seen'] = time();
     return row('SELECT id,name,email,role,totp_secret FROM users WHERE id=?', [$_SESSION['user_id']]);
@@ -32,7 +33,7 @@ function login_user(string $email, string $password, string $totp = ''): bool {
         query('INSERT INTO login_attempts(ip) VALUES(?)', [hash('sha256', $ip)]); return false;
     }
     if (session_status() === PHP_SESSION_ACTIVE) session_regenerate_id(true);
-    $_SESSION['user_id'] = $user['id']; $_SESSION['last_seen'] = time(); $_SESSION['csrf'] = bin2hex(random_bytes(32));
+    $_SESSION['user_id'] = $user['id']; $_SESSION['last_seen'] = time(); $_SESSION['auth_session_epoch'] = setting('auth_session_epoch','1'); $_SESSION['csrf'] = bin2hex(random_bytes(32));
     if (password_needs_rehash($user['password_hash'], PASSWORD_DEFAULT)) query('UPDATE users SET password_hash=? WHERE id=?', [password_hash($password, PASSWORD_DEFAULT), $user['id']]);
     audit('auth.login', 'Successful login'); return true;
 }
