@@ -6,6 +6,8 @@ ob_start(static function (string $html) use ($lang): string {
     }
     $location = trim((string)setting('location_label', ''));
     if ($location !== '') $html = str_replace('KAŞ · ANTALYA', e($location), $html);
+    $eyebrow = trim((string)setting('homepage_eyebrow_'.$lang, ''));
+    if ($eyebrow !== '') $html = str_replace(e(t('hero_eyebrow', $lang)), e($eyebrow), $html);
     $logo = trim((string)setting('logo_url', ''));
     if ($logo !== '' && filter_var($logo, FILTER_VALIDATE_URL)) {
         $html = str_replace(['/assets/logo.svg', '/assets/logo-light.svg'], [e($logo), e($logo)], $html);
