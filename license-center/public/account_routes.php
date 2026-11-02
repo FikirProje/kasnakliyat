@@ -13,6 +13,18 @@ if (!is_dir($sessionPath)) mkdir($sessionPath, 0700, true);
 session_save_path($sessionPath);
 if (session_status() !== PHP_SESSION_ACTIVE) session_start();
 
+// The sales centre must not load analytics before an explicit visitor choice.
+ob_start(static function (string $html): string {
+    $accepted = ($_COOKIE['lc_cookie_consent'] ?? '') === 'accepted';
+    if (!$accepted) {
+        $html = preg_replace('#<script async src="https://www\.googletagmanager\.com/gtag/js\?id=[^"]+"></script><script>.*?</script>#s', '', $html) ?? $html;
+        if (strpos($html, 'data-lc-cookie-banner') === false && strpos($html, '<meta name="robots" content="noindex,nofollow">') === false) {
+            $html = str_replace('</html>', '<div data-lc-cookie-banner style="position:fixed;left:16px;right:16px;bottom:16px;z-index:20;background:#06283a;color:#fff;padding:16px 18px;border-radius:10px;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap"><span>We use optional analytics cookies to improve the sales experience.</span><span><button type="button" data-lc-cookie="essential">Only necessary</button> <button type="button" data-lc-cookie="accepted">Accept analytics</button></span></div><script>document.querySelectorAll("[data-lc-cookie]").forEach(function(b){b.addEventListener("click",function(){document.cookie="lc_cookie_consent="+b.dataset.lcCookie+";path=/;max-age=31536000;SameSite=Lax";location.reload()})});</script></html>', $html);
+        }
+    }
+    return $html;
+});
+
 function lc_smtp_send(string $to, string $subject, string $body): bool
 {
     $host = lc_env('LC_SMTP_HOST');
