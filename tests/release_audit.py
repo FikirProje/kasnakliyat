@@ -3,7 +3,7 @@ from pathlib import Path
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
-ARCHIVE = Path(__file__).resolve().parents[2] / "outputs" / "product-tofidesk-marketplace.zip"
+ARCHIVE = Path(__file__).resolve().parents[3] / "outputs" / "product-tofidesk-marketplace.zip"
 
 assert ARCHIVE.is_file(), f"missing archive: {ARCHIVE}"
 with zipfile.ZipFile(ARCHIVE) as archive:
