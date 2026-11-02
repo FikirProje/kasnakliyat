@@ -1,5 +1,24 @@
 <?php
 declare(strict_types=1);
+function preflight_requirements_page(): void {
+    $required = ['pdo_sqlite' => 'PDO SQLite', 'sqlite3' => 'SQLite3', 'curl' => 'cURL', 'openssl' => 'OpenSSL', 'mbstring' => 'mbstring', 'fileinfo' => 'fileinfo', 'gd' => 'GD/WebP'];
+    $missing = [];
+    foreach ($required as $extension => $label) if (!extension_loaded($extension)) $missing[] = $label;
+    if (!$missing) {
+        $storage = dirname(__DIR__) . '/storage';
+        if (!is_dir($storage) && !@mkdir($storage, 0700, true) && !is_dir($storage)) $missing[] = 'Yazılabilir storage dizini';
+        elseif (!is_writable($storage)) $missing[] = 'Yazılabilir storage dizini';
+    }
+    if (!$missing) return;
+    http_response_code(503);
+    $lang = strtolower(substr((string)($_GET['lang'] ?? $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? 'tr'), 0, 2));
+    $title = $lang === 'tr' ? 'Kurulum için sunucu gereksinimleri eksik' : 'Server requirements are missing';
+    $intro = $lang === 'tr' ? 'Plesk/cPanel PHP ayarlarında aşağıdaki gereksinimleri etkinleştirin ve sayfayı yenileyin.' : 'Enable the following requirements in the Plesk/cPanel PHP settings and reload the page.';
+    echo '<!doctype html><html lang="'.htmlspecialchars($lang, ENT_QUOTES, 'UTF-8').'" dir="'.(in_array($lang, ['ar','fa'], true) ? 'rtl' : 'ltr').'" ><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'.htmlspecialchars($title, ENT_QUOTES, 'UTF-8').' · TofiDesk</title><style>body{font:16px/1.6 system-ui,sans-serif;background:#092b3d;color:#153346;margin:0;padding:28px}.card{max-width:760px;margin:8vh auto;background:#f7faf8;border-radius:18px;padding:34px;box-shadow:0 20px 60px #00141f66}h1{color:#08283a}li{padding:10px;margin:7px 0;background:#fff;border:1px solid #dce8e3;border-radius:8px;color:#a33}code{background:#edf3f0;padding:3px 6px;border-radius:4px}</style><main class="card"><p><strong>TOFIDESK</strong></p><h1>'.htmlspecialchars($title, ENT_QUOTES, 'UTF-8').'</h1><p>'.htmlspecialchars($intro, ENT_QUOTES, 'UTF-8').'</p><ul>'.implode('', array_map(static fn(string $item): string => '<li>✗ '.htmlspecialchars($item, ENT_QUOTES, 'UTF-8').'</li>', $missing)).'</ul><p>PHP 8.2+ · PDO SQLite · SQLite3 · cURL · OpenSSL · mbstring · fileinfo · GD/WebP</p><p><code>/install</code> adresini gereksinimler tamamlandıktan sonra tekrar açın.</p></main></html>';
+    exit;
+}
+$preflightPath = rawurldecode(parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/');
+if (PHP_SAPI !== 'cli' || $preflightPath !== '/health') preflight_requirements_page();
 // For production point the document root to public/, never to the repository.
 $path = rawurldecode(parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/');
 if (PHP_SAPI === 'cli-server' && str_starts_with($path, '/assets/') && !str_contains($path, '..')) {
