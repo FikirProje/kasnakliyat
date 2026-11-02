@@ -103,7 +103,7 @@ function public_request(string $lang, string $kind): array {
     $q->execute([$reference,$kind,$fields['name'],$fields['email'],$fields['phone'],$fields['origin'],$fields['destination'],$fields['cargo'],$fields['preferred_date'],$fields['slot'],$fields['notes']]);
     $requestId = (int)db()->lastInsertId();
     if ($mediaId) { $q=db()->prepare('INSERT INTO request_media(request_id,media_id) VALUES(?,?)'); $q->execute([$requestId,$mediaId]); }
-    if (filter_var(setting('contact_email'),FILTER_VALIDATE_EMAIL)) {
+    if (filter_var(setting('contact_email'),FILTER_VALIDATE_EMAIL) && setting($kind==='quote'?'notify_request_created':'notify_appointment_created','1')==='1') {
         $subject=$kind==='quote'?setting('mail_subject_request','Yeni teklif talebi'):setting('mail_subject_appointment','Yeni randevu talebi');
         $template=$kind==='quote'?setting('mail_body_request','Yeni {type} talebi alındı. Referans: {reference}. Ayrıntılar yönetim panelindedir.'):setting('mail_body_appointment','Yeni {type} talebi alındı. Referans: {reference}. Ayrıntılar yönetim panelindedir.');
         $body=strtr($template,['{reference}'=>$reference,'{type}'=>$kind==='quote'?'teklif':'randevu']);

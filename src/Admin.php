@@ -4,7 +4,7 @@ declare(strict_types=1);
 function admin_roles(string $section): array
 {
     return match ($section) {
-        'settings', 'email-templates', 'integrations', 'security', 'users', 'audit', 'backup', 'mail', 'languages', 'themes', 'licenses' => ['admin'],
+        'settings', 'email-templates', 'notification-rules', 'integrations', 'security', 'users', 'audit', 'backup', 'mail', 'languages', 'themes', 'licenses' => ['admin'],
         'content', 'editor', 'media', 'gallery', 'seo', 'jobs' => ['admin', 'editor'],
         'requests', 'appointments' => ['admin', 'operator'],
         default => ['admin', 'editor', 'operator'],
@@ -225,7 +225,7 @@ function handle_admin(string $path): void
     $section = trim(substr($path, strlen('/admin')), '/') ?: 'dashboard';
     if ($section === 'login') { admin_login_page(); return; }
     $user = require_login();
-    if (!in_array($section, ['dashboard','logout','requests','appointments','content','editor','media','gallery','seo','settings','email-templates','integrations','users','jobs','audit','backup','mail','languages','themes','licenses'], true)) { http_response_code(404); admin_layout('Bulunamadı','dashboard',$user,'<div class="panel">Bu sayfa bulunamadı.</div>'); return; }
+    if (!in_array($section, ['dashboard','logout','requests','appointments','content','editor','media','gallery','seo','settings','email-templates','notification-rules','integrations','users','jobs','audit','backup','mail','languages','themes','licenses'], true)) { http_response_code(404); admin_layout('Bulunamadı','dashboard',$user,'<div class="panel">Bu sayfa bulunamadı.</div>'); return; }
     require_role(admin_roles($section));
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         csrf_verify();
@@ -238,12 +238,12 @@ function handle_admin(string $path): void
         redirect($destination);
     }
     if ($section === 'logout') { http_response_code(405); header('Allow: POST'); return; }
-    $titles=['dashboard'=>'Genel bakış','requests'=>'Teklif talepleri','appointments'=>'Randevu takvimi','content'=>'İçerik stüdyosu','editor'=>'Dil editörü','media'=>'Görsel kütüphanesi','gallery'=>'Galeri','seo'=>'SEO merkezi','settings'=>'İşletme ve entegrasyonlar','email-templates'=>'E-posta şablonları','integrations'=>'Entegrasyon merkezi','security'=>'Hesap güvenliği','users'=>'Kullanıcılar','jobs'=>'Yapay zekâ işleri','audit'=>'İşlem kayıtları','backup'=>'Yedekleme','mail'=>'E-posta kuyruğu','languages'=>'Dil paketleri','themes'=>'Tema kütüphanesi','licenses'=>'Lisans'];
+    $titles=['dashboard'=>'Genel bakış','requests'=>'Teklif talepleri','appointments'=>'Randevu takvimi','content'=>'İçerik stüdyosu','editor'=>'Dil editörü','media'=>'Görsel kütüphanesi','gallery'=>'Galeri','seo'=>'SEO merkezi','settings'=>'İşletme ve entegrasyonlar','email-templates'=>'E-posta şablonları','notification-rules'=>'Bildirim kuralları','integrations'=>'Entegrasyon merkezi','security'=>'Hesap güvenliği','users'=>'Kullanıcılar','jobs'=>'Yapay zekâ işleri','audit'=>'İşlem kayıtları','backup'=>'Yedekleme','mail'=>'E-posta kuyruğu','languages'=>'Dil paketleri','themes'=>'Tema kütüphanesi','licenses'=>'Lisans'];
     ob_start();
     match($section) {
         'requests','appointments' => admin_requests_page($section),
         'content' => admin_content_page(), 'editor'=>admin_editor_page(), 'media'=>admin_media_page(), 'gallery'=>admin_gallery_page(), 'seo'=>admin_seo_page(),
-        'settings'=>admin_settings_page(), 'email-templates'=>admin_email_templates_page(), 'integrations'=>admin_integrations_page(), 'security'=>admin_security_page($user), 'users'=>admin_users_page(), 'jobs'=>admin_jobs_page(), 'audit'=>admin_audit_page(),
+        'settings'=>admin_settings_page(), 'email-templates'=>admin_email_templates_page(), 'notification-rules'=>admin_notification_rules_page(), 'integrations'=>admin_integrations_page(), 'security'=>admin_security_page($user), 'users'=>admin_users_page(), 'jobs'=>admin_jobs_page(), 'audit'=>admin_audit_page(),
         'backup'=>admin_backup_page(), 'mail'=>admin_mail_page(), 'languages'=>admin_languages_page(), 'themes'=>admin_themes_page(), 'licenses'=>admin_licenses_page(), default=>admin_dashboard($user),
     };
     admin_layout($titles[$section],$section,$user,(string)ob_get_clean());
@@ -338,6 +338,7 @@ function admin_post(string $section, array $user): void
         if($server!=='' && (!filter_var($server,FILTER_VALIDATE_URL)||!str_starts_with(strtolower($server),'https://'))) throw new InvalidArgumentException('Lisans sunucusu HTTPS adresi olmalı.');
         save_setting('license_server_url',rtrim($server,'/')); save_setting('license_key',$key); $result=license_check_remote(); audit('license.checked',license_domain()); flash($result['active']?'success':'error',$result['message']); return;
     }
+    if ($section === 'notification-rules' && $action === 'notification_rules') { foreach(['notify_request_created','notify_appointment_created'] as $key) save_setting($key,($_POST[$key]??'0')==='1'?'1':'0'); audit('notification.rules_updated'); flash('success','Bildirim kuralları kaydedildi.'); return; }
     if ($section === 'email-templates' && $action === 'mail_templates') { foreach(['mail_subject_request','mail_subject_appointment','mail_subject_verification'] as $key) save_setting($key,admin_input($key,180)); foreach(['mail_body_request','mail_body_appointment'] as $key) save_setting($key,admin_input($key,5000)); audit('mail.templates_updated'); flash('success','E-posta şablonları kaydedildi.'); return; }
     if ($section === 'settings' && $action === 'settings') {
         $keys=['business_name','country_code','currency_code','timezone','location_label','contact_phone','contact_email','whatsapp','address','site_description','theme_primary','theme_accent','theme_custom_css','facebook_url','instagram_url','linkedin_url','youtube_url','pinterest_url','pinterest_verify','google_site_verification','analytics_id','ai_provider','ai_model','mail_from','smtp_host','smtp_port','smtp_user','mail_subject_request','mail_subject_appointment','mail_subject_verification','mail_body_request','mail_body_appointment'];
@@ -410,7 +411,7 @@ function admin_layout(string $title,string $section,array $user,string $body): v
 {
     $lang = admin_user_lang($user);
     $direction = locale_direction($lang);
-    $nav=['dashboard'=>['◫','Genel bakış'],'requests'=>['↗','Teklif talepleri'],'appointments'=>['▦','Randevular'],'content'=>['▤','İçerik stüdyosu'],'languages'=>['文','Dil paketleri'],'themes'=>['◐','Tema kütüphanesi'],'licenses'=>['◇','Lisans'],'jobs'=>['✧','Yapay zekâ işleri'],'media'=>['▧','Görsel kütüphanesi'],'gallery'=>['▦','Galeri'],'seo'=>['◎','SEO merkezi'],'mail'=>['✉','E-posta kuyruğu'],'settings'=>['⚙','Ayarlar'],'email-templates'=>['✉','E-posta şablonları'],'integrations'=>['⚡','Entegrasyonlar'],'security'=>['🔒','Hesap güvenliği'],'users'=>['♙','Kullanıcılar'],'backup'=>['↓','Yedekleme'],'audit'=>['≡','İşlem kayıtları']];
+    $nav=['dashboard'=>['◫','Genel bakış'],'requests'=>['↗','Teklif talepleri'],'appointments'=>['▦','Randevular'],'content'=>['▤','İçerik stüdyosu'],'languages'=>['文','Dil paketleri'],'themes'=>['◐','Tema kütüphanesi'],'licenses'=>['◇','Lisans'],'jobs'=>['✧','Yapay zekâ işleri'],'media'=>['▧','Görsel kütüphanesi'],'gallery'=>['▦','Galeri'],'seo'=>['◎','SEO merkezi'],'mail'=>['✉','E-posta kuyruğu'],'settings'=>['⚙','Ayarlar'],'email-templates'=>['✉','E-posta şablonları'],'notification-rules'=>['♧','Bildirim kuralları'],'integrations'=>['⚡','Entegrasyonlar'],'security'=>['🔒','Hesap güvenliği'],'users'=>['♙','Kullanıcılar'],'backup'=>['↓','Yedekleme'],'audit'=>['≡','İşlem kayıtları']];
     ?><!doctype html><html lang="<?= e($lang) ?>" dir="<?= e($direction) ?>"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title><?= e($title) ?> · Kaş Nakliyat</title><link rel="stylesheet" href="/assets/admin.css"></head><body><a href="#main" class="skip"><?= e(admin_t('skip',$lang)) ?></a><aside class="sidebar"><a class="brand" href="/admin">KAŞ<span>NAKLİYAT</span></a><span class="sidebar-caption"><?= e(admin_t('management',$lang)) ?></span><nav aria-label="<?= e(admin_t('management',$lang)) ?>"><?php foreach($nav as $key=>[$icon,$label]): if(!admin_allowed($key,$user))continue; ?><a class="<?= ($section===$key || ($section==='editor'&&$key==='content'))?'active':'' ?>" href="/admin<?= $key==='dashboard'?'':'/'.$key ?>"><span aria-hidden="true"><?= $icon ?></span><?= e($label) ?></a><?php endforeach ?></nav><div class="sidebar-bottom"><a href="/tr/"><?= e(admin_t('open_site',$lang)) ?> ↗</a><form method="post" class="language-form"><?= admin_action('set_admin_locale'); admin_select(admin_t('language',$lang),'lang',admin_locales(),$lang) ?><button class="secondary" type="submit"><?= e(admin_t('save_language',$lang)) ?></button></form><p><?= e($user['name']) ?><small><?= e($user['role']) ?></small></p><form method="post" action="/admin/logout"><?= csrf_field() ?><button class="logout" type="submit"><?= e(admin_t('logout',$lang)) ?></button></form></div></aside><div class="workspace"><header class="topbar"><span>Kaş Nakliyat <span class="crumb">/ <?= e($title) ?></span></span><span class="topbar-right"><?= e(strtoupper($lang)) ?> <span class="avatar"><?= e(mb_substr($user['name'],0,1)) ?></span></span></header><main id="main" class="main"><div class="page-heading"><div><p class="eyebrow"><?= e(admin_t('workspace',$lang)) ?></p><h1><?= e($title) ?></h1></div><time datetime="<?= date('Y-m-d') ?>"><?= date('d.m.Y') ?></time></div><?php foreach(take_flash() as $flash): ?><p class="notice <?= e($flash['kind']) ?>" role="status"><?= e($flash['message']) ?></p><?php endforeach ?><?= $body ?></main><footer class="admin-footer">Kaş Nakliyat · Bağımsız yönetim platformu <span>Europe/Istanbul</span></footer></div></body></html><?php
 }
 
@@ -485,6 +486,11 @@ function admin_themes_page(): void
 function admin_licenses_page(): void
 {
     $active=setting('license_status')==='active'; ?><div class="split"><section class="panel"><h2>TofiDesk lisansı</h2><p class="muted">Lisans anahtarı bu kurulumun alan adına bağlanır. Anahtar yalnız HTTPS lisans merkeziyle doğrulanır.</p><form method="post"><?php admin_action('license'); admin_field('Lisans merkezi','license_server_url',setting('license_server_url','https://tofidesk.com/transportation'),'url',true); admin_field('Lisans anahtarı','license_key',setting('license_key'),'text',true) ?><button>Kaydet ve doğrula</button></form></section><section class="panel"><h2>Durum</h2><p class="<?= $active?'notice success':'notice' ?>"><?= $active?'Etkin lisans':'Henüz doğrulanmadı' ?></p><p>Alan adı: <strong><?=e(license_domain() ?: 'APP_URL gerekli')?></strong></p><?php if(setting('license_checked_at')):?><p class="muted">Son kontrol: <?=e(setting('license_checked_at'))?></p><?php endif?><?php if(setting('license_theme')):?><p>Merkezden gelen tema: <strong><?=e(setting('license_theme'))?></strong></p><?php endif?><p class="muted">CodeCanyon alıcıları satın alma kodlarını lisans merkezinde anahtara dönüştürür. Satın alma kodu bu panelde saklanmaz.</p></section></div><?php
+}
+
+function admin_notification_rules_page(): void
+{
+    ?><form method="post" class="panel"><?php admin_action('notification_rules'); ?><h2>Bildirim kuralları</h2><p class="muted">Olay oluştuğunda e-posta kuyruğuna bildirim alınıp alınmayacağını seçin.</p><label><input type="checkbox" name="notify_request_created" value="1" <?= setting('notify_request_created','1')==='1'?'checked':'' ?>> Yeni teklif taleplerinde bildir</label><label><input type="checkbox" name="notify_appointment_created" value="1" <?= setting('notify_appointment_created','1')==='1'?'checked':'' ?>> Yeni randevu taleplerinde bildir</label><button>Kuralları kaydet</button></form><?php
 }
 
 function admin_email_templates_page(): void
