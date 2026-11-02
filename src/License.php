@@ -16,7 +16,12 @@ function license_check_remote(): array {
     $curl=curl_init($server.'/api/v1/licenses/check'); curl_setopt_array($curl,[CURLOPT_POST=>true,CURLOPT_POSTFIELDS=>$request,CURLOPT_HTTPHEADER=>['Content-Type: application/json','Accept: application/json'],CURLOPT_RETURNTRANSFER=>true,CURLOPT_CONNECTTIMEOUT=>5,CURLOPT_TIMEOUT=>10]);
     $body=curl_exec($curl); $error=curl_error($curl); $code=(int)curl_getinfo($curl,CURLINFO_RESPONSE_CODE); curl_close($curl);
     $data=is_string($body)?json_decode($body,true):null;
-    if($error!==''||$code!==200||!is_array($data)||empty($data['active'])) return ['configured'=>true,'active'=>false,'message'=>$error!==''?'Lisans sunucusuna bağlanılamadı.':'Lisans doğrulanamadı.'];
+    if($error!==''||$code!==200||!is_array($data)||empty($data['active'])) {
+        $remoteError=strtolower((string)($data['error']??'')); if(str_contains($remoteError,'revoked')||str_contains($remoteError,'not active')) return ['configured'=>true,'active'=>false,'message'=>'Lisans pasif veya iptal edilmiş.'];
+        $cachePath=storage_path('license-cache.json'); $cache=is_file($cachePath)?json_decode((string)file_get_contents($cachePath),true):null;
+        if(is_array($cache)&&!empty($cache['active'])&&(int)($cache['checked_at_unix']??0)>time()-1209600){$cache['degraded']=true;$cache['message']='Lisans merkezi geçici olarak erişilemiyor; grace period içinde devam ediliyor.';return $cache;}
+        return ['configured'=>true,'active'=>false,'message'=>$error!==''?'Lisans sunucusuna bağlanılamadı.':'Lisans doğrulanamadı.'];
+    }
     $theme=$data['theme']??null;
     if(is_array($theme) && is_array($theme['payload']??null)) {
         $payload=$theme['payload']; $locale=(string)($theme['locale']??'global'); $name='TofiDesk: '.mb_substr((string)($theme['name']??'Theme'),0,80);
@@ -25,6 +30,5 @@ function license_check_remote(): array {
             db()->beginTransaction(); try { query('UPDATE themes SET is_active=0 WHERE locale=?',[$locale]); $existing=row('SELECT id FROM themes WHERE name=?',[$name]); if($existing) query("UPDATE themes SET locale=?,primary_color=?,accent_color=?,custom_css='',status='published',is_active=1,updated_at=datetime('now') WHERE id=?",[$locale,$primary,$accent,$existing['id']]); else query("INSERT INTO themes(name,locale,primary_color,accent_color,custom_css,status,is_active) VALUES(?,?,?,?,?,'published',1)",[$name,$locale,$primary,$accent,'']); db()->commit(); } catch(Throwable $exception){if(db()->inTransaction())db()->rollBack();throw $exception;}
         }
     }
-    save_setting('license_status','active'); save_setting('license_checked_at',gmdate('c')); save_setting('license_theme',is_array($theme)?(string)($theme['name']??''): '');
-    return ['configured'=>true,'active'=>true,'message'=>'Lisans etkin.','theme'=>$data['theme']??null];
+    save_setting('license_status','active'); save_setting('license_checked_at',gmdate('c')); save_setting('license_theme',is_array($theme)?(string)($theme['name']??''): ''); $result=['configured'=>true,'active'=>true,'message'=>'Lisans etkin.','theme'=>$data['theme']??null,'checked_at_unix'=>time()]; $cachePath=storage_path('license-cache.json'); @file_put_contents($cachePath,json_encode($result),LOCK_EX); @chmod($cachePath,0600); return $result;
 }
