@@ -22,6 +22,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array($path, ['/account/login', 
 
 // The sales centre must not load analytics before an explicit visitor choice.
 ob_start(static function (string $html): string {
+    $lang = function_exists('lc_public_locale') ? lc_public_locale() : 'tr';
+    $localeNames = ['tr'=>'Türkçe','en'=>'English','de'=>'Deutsch','fr'=>'Français','es'=>'Español','it'=>'Italiano','pt'=>'Português','ru'=>'Русский','ar'=>'العربية','fa'=>'فارسی','nl'=>'Nederlands','zh'=>'中文','ja'=>'日本語','ko'=>'한국어'];
+    $options = '';
+    foreach ($localeNames as $code => $name) {
+        $options .= '<option value="?lang='.htmlspecialchars($code, ENT_QUOTES, 'UTF-8').'"'.($lang === $code ? ' selected' : '').'>'.htmlspecialchars($name, ENT_QUOTES, 'UTF-8').'</option>';
+    }
+    $html = preg_replace('#<span class="locale-switch">.*?</span>#s', '<label class="locale-select"><span class="sr-only">Language</span><select onchange="if(this.value)location.href=this.value">'.str_replace('<option', '<option', $options).'</select></label>', $html) ?? $html;
+    $translations = [
+        'tr'=>['Product'=>'Ürün','Pricing'=>'Fiyatlandırma','Themes'=>'Temalar','Contact'=>'İletişim','Buy now'=>'Satın al','Sell transport websites with confidence.'=>'Taşımacılık sitelerini güvenle satın.', 'Explore themes'=>'Temaları keşfet'],
+        'de'=>['Product'=>'Produkt','Pricing'=>'Preise','Themes'=>'Themes','Contact'=>'Kontakt','Buy now'=>'Jetzt kaufen','Explore themes'=>'Themes entdecken'],
+        'fr'=>['Product'=>'Produit','Pricing'=>'Tarifs','Themes'=>'Thèmes','Contact'=>'Contact','Buy now'=>'Acheter','Explore themes'=>'Découvrir les thèmes'],
+        'es'=>['Product'=>'Producto','Pricing'=>'Precios','Themes'=>'Temas','Contact'=>'Contacto','Buy now'=>'Comprar','Explore themes'=>'Ver temas'],
+        'it'=>['Product'=>'Prodotto','Pricing'=>'Prezzi','Themes'=>'Temi','Contact'=>'Contatti','Buy now'=>'Acquista','Explore themes'=>'Scopri i temi'],
+        'pt'=>['Product'=>'Produto','Pricing'=>'Preços','Themes'=>'Temas','Contact'=>'Contacto','Buy now'=>'Comprar','Explore themes'=>'Explorar temas'],
+        'nl'=>['Product'=>'Product','Pricing'=>'Prijzen','Themes'=>'Thema’s','Contact'=>'Contact','Buy now'=>'Kopen','Explore themes'=>'Thema’s bekijken'],
+        'ru'=>['Product'=>'Продукт','Pricing'=>'Цены','Themes'=>'Темы','Contact'=>'Контакты','Buy now'=>'Купить','Explore themes'=>'Все темы'],
+        'ar'=>['Product'=>'المنتج','Pricing'=>'الأسعار','Themes'=>'القوالب','Contact'=>'اتصل بنا','Buy now'=>'اشتر الآن','Explore themes'=>'استكشف القوالب'],
+        'fa'=>['Product'=>'محصول','Pricing'=>'قیمت‌ها','Themes'=>'قالب‌ها','Contact'=>'تماس','Buy now'=>'خرید','Explore themes'=>'مشاهده قالب‌ها'],
+        'zh'=>['Product'=>'产品','Pricing'=>'价格','Themes'=>'主题','Contact'=>'联系','Buy now'=>'立即购买','Explore themes'=>'浏览主题'],
+        'ja'=>['Product'=>'製品','Pricing'=>'料金','Themes'=>'テーマ','Contact'=>'お問い合わせ','Buy now'=>'購入する','Explore themes'=>'テーマを見る'],
+        'ko'=>['Product'=>'제품','Pricing'=>'가격','Themes'=>'테마','Contact'=>'문의','Buy now'=>'구매하기','Explore themes'=>'테마 보기'],
+    ];
+    foreach ($translations[$lang] ?? [] as $from => $to) {
+        $html = str_replace($from, $to, $html);
+    }
+    $html = str_replace('</style>', '.locale-select select{font:600 12px Poppins,Arial;background:#ffffff18;color:#fff;border:1px solid #ffffff44;border-radius:8px;padding:8px 28px 8px 10px;max-width:150px}.locale-select option{color:#08283a;background:#fff}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}', $html);
     $accepted = ($_COOKIE['lc_cookie_consent'] ?? '') === 'accepted';
     if (!$accepted) {
         $html = preg_replace('#<script async src="https://www\.googletagmanager\.com/gtag/js\?id=[^"]+"></script><script>.*?</script>#s', '', $html) ?? $html;
