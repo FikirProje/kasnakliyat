@@ -1,10 +1,10 @@
 # TofiDesk Transportation licence centre
 
-Deploy this directory as the document root for `https://tofidesk.com/transportation` with PHP 8.2+ and SQLite enabled. Copy `.env.example` outside the web root as `.env`, set `APP_URL`, `LICENSE_DB_PATH` and a long `LICENSE_INSTALL_TOKEN`, then visit `/install?token=...` once to create the first administrator.
+Deploy this directory as the document root for `https://product.tofidesk.com` with PHP 8.2+ and SQLite enabled. Copy `.env.example` outside the web root as `.env`, set `APP_URL` and `LICENSE_DB_PATH`, then visit `/install` once to create the first administrator. The installer is tokenless and locks automatically after the first administrator.
 
 The centre issues licence keys, limits each key to configured domains, publishes a selected theme payload, accepts purchase/contact requests at `/contact`, and exposes a public product and theme page at `/shop`. The API never exposes administrator credentials, Envato tokens or licence secrets.
 
-Create a standalone deployment archive with `python3 bin/package.py /tmp/tofi-transportation-license-center.zip`.
+Create a standalone deployment archive by compressing the `license-center` directory with the public directory as the document root. The repository's prepared archive is `outputs/product-tofidesk-license-center.zip`.
 
 ## CodeCanyon / Envato flow
 

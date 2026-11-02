@@ -21,7 +21,7 @@ php -S 127.0.0.1:8080 -t public public/index.php
 
 İlk yönetici otomatik oluşturulmaz, varsayılan parola yoktur. `user:create` komutunu kendi e-postanızla çalıştırın; parolayı komut satırı argümanına veya Git'e koymayın. İki aşamalı giriş: `php bin/console.php user:2fa --email=...`; doğrulayıcı uygulamanın geçerli kodu doğrulanınca etkinleşir. Parola yenileme: `user:password --email=...`.
 
-Sunucuya ZIP yükleyerek tarayıcıdan ilk kurulum yapmak için [KURULUM.txt](KURULUM.txt) adımlarını izleyin. `/install` yalnız özel `INSTALL_TOKEN` ile açılır ve ilk hesap oluşturulduğunda kapanır. Yönetici adresi `info@kasnakliyat.com` olarak önceden doldurulur; parolayı sunucunuzda siz belirlersiniz. Paket üretimi: `python3 bin/package.py --output=/hedef/kasnakliyat.zip`. Canlı veritabanı, sırlar ve oturumlar pakete dahil edilmez.
+Sunucuya ZIP yükleyerek tarayıcıdan ilk kurulum yapmak için [KURULUM.txt](KURULUM.txt) adımlarını izleyin. `/install` modern token’sız açılır, ilk hesap oluşturulduğunda otomatik kapanır. Yönetici adresi kurulum ekranında belirlenir; varsayılan parola yoktur. Paket üretimi: `python3 bin/package.py --output=/hedef/kasnakliyat.zip`. Canlı veritabanı, sırlar ve oturumlar pakete dahil edilmez.
 
 Bu görev zaten yalıtılmıştır. Mevcut checkout'u kullanın; kullanıcı özellikle istemedikçe Git worktree oluşturmayın.
 
@@ -46,7 +46,7 @@ Bu görev zaten yalıtılmıştır. Mevcut checkout'u kullanın; kullanıcı öz
 Sunucuda `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` sağlayın. Parola dışındaki alanlar yönetim panelinde de ayarlanabilir; ortam değişkenleri önceliklidir. Uzak SMTP için doğrulanmış STARTTLS veya 465/TLS zorunludur. Şifresiz yerel relay yalnız `SMTP_ALLOW_INSECURE_LOCAL=1` ile loopback üzerinde kullanılabilir. Gönderimler UTF-8 düz metindir.
 
 ```sh
-php bin/worker.php all  # veya ai / mail; tek sefer, sınırlı iş grubu
+php bin/worker.php all  # veya ai / mail / notifications; tek sefer, sınırlı iş grubu
 ```
 
 Üretimde süreç yöneticisi veya zamanlayıcıyla her dakika çalıştırın. Aynı anda çalışan işçiler işi atomik sahiplenir. Kesilen işlerin 10 dakikalık kilidi kurtarılır. Otomatik sınırsız tekrar yoktur; başarısız işleri panelden inceleyin.
