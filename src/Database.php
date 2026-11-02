@@ -22,10 +22,6 @@ function setting(string $key, string $default = ''): string {
 function save_setting(string $key, string $value): void { query('INSERT INTO settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value', [$key, $value]); }
 function migrate(): void {
     db()->exec('CREATE TABLE IF NOT EXISTS migrations(version INTEGER PRIMARY KEY, applied_at TEXT NOT NULL)');
-    // Repair an interrupted/legacy first migration before any setting lookup.
-    // Some shared-hosting restores contain migrations(version=1) but lost the
-    // settings table; CREATE IF NOT EXISTS is safe for complete installations.
-    db()->exec('CREATE TABLE IF NOT EXISTS settings(key TEXT PRIMARY KEY,value TEXT NOT NULL)');
     if (row('SELECT version FROM migrations WHERE version=1')) { migrate_extensions(); return; }
     db()->beginTransaction();
     try {
