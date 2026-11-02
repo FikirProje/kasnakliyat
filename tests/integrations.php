@@ -65,6 +65,11 @@ try {
     save_setting('ai_provider', '  ');
     save_setting('ai_model', '');
     integration_check(ai_provider_setting() === 'openai' && ai_model_setting() === 'gpt-4.1-mini', 'blank saved AI settings retain supported defaults');
+    save_setting('sms_provider', 'netgsm');
+    $notification = enqueue_notification('sms', '+905555555555', 'Test bildirimi');
+    $notificationResult = send_notification_queue(1);
+    integration_check($notificationResult === ['sent' => 0, 'failed' => 1] && row('SELECT status FROM notification_queue WHERE id=?', [$notification])['status'] === 'failed', 'missing SMS credentials remain in safe test mode');
+    save_setting('sms_provider', 'none');
 $paytr = ['callback_id'=>'cb-1','merchant_oid'=>'order-1','status'=>'success','total_amount'=>'19900'];
 $paytr['hash'] = paytr_callback_signature($paytr, 'merchant-key', 'merchant-salt');
 integration_check(paytr_callback_valid($paytr, 'merchant-key', 'merchant-salt'), 'PayTR callback signature accepts a valid signed notification');
