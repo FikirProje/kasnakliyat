@@ -4,7 +4,15 @@ declare(strict_types=1);
 /** Installer language selection is available before the database is initialized. */
 function installer_locale(): string
 {
-    $candidate = strtolower((string)($_POST['installer_lang'] ?? $_GET['lang'] ?? 'en'));
+    $candidate = strtolower((string)($_POST['installer_lang'] ?? $_GET['lang'] ?? ''));
+    if ($candidate === '') {
+        $header = strtolower((string)($_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? ''));
+        foreach (preg_split('/\s*,\s*/', $header) ?: [] as $part) {
+            $guess = substr(trim(explode(';', $part, 2)[0]), 0, 2);
+            if ($guess !== '' && array_key_exists($guess, core_locales())) { $candidate = $guess; break; }
+        }
+    }
+    if ($candidate === '') $candidate = 'en';
     return array_key_exists($candidate, core_locales()) ? $candidate : 'en';
 }
 
