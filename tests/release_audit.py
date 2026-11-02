@@ -8,6 +8,7 @@ BOOTSTRAP = (ROOT / "src" / "bootstrap.php").read_text(encoding="utf-8")
 PUBLIC_LAYOUT = (ROOT / "templates" / "public" / "layout.php").read_text(encoding="utf-8")
 assert "style-src 'self' 'nonce-" in BOOTSTRAP and "unsafe-inline" not in BOOTSTRAP, "CSP policy is unsafe or missing nonce"
 assert "csp_nonce()" in PUBLIC_LAYOUT, "custom theme CSS is not nonce-bound"
+assert "social-links" in PUBLIC_LAYOUT and "noopener noreferrer" in PUBLIC_LAYOUT, "social profile links are not accessible and safe"
 
 assert ARCHIVE.is_file(), f"missing archive: {ARCHIVE}"
 with zipfile.ZipFile(ARCHIVE) as archive:

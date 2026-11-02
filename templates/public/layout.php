@@ -1,3 +1,25 @@
+<?php
+ob_start(static function (string $html) use ($lang): string {
+    $profiles = [
+        'facebook_url' => ['Facebook', 'Facebook'],
+        'instagram_url' => ['Instagram', 'Instagram'],
+        'linkedin_url' => ['LinkedIn', 'LinkedIn'],
+        'youtube_url' => ['YouTube', 'YouTube'],
+        'pinterest_url' => ['Pinterest', 'Pinterest'],
+    ];
+    $links = '';
+    foreach ($profiles as $settingKey => [$label, $aria]) {
+        $url = trim((string)setting($settingKey, ''));
+        if ($url === '' || !filter_var($url, FILTER_VALIDATE_URL) || !in_array(strtolower((string)parse_url($url, PHP_URL_SCHEME)), ['https', 'http'], true)) continue;
+        $host = strtolower((string)parse_url($url, PHP_URL_HOST));
+        if ($host === '' || preg_match('/[\r\n\"<>]/', $url)) continue;
+        $links .= '<a class="social-link" href="'.e($url).'" target="_blank" rel="noopener noreferrer" aria-label="'.e($aria).'">'.e($label).'</a>';
+    }
+    if ($links === '') return $html;
+    $block = '<nav class="social-links" aria-label="Social media">'.$links.'</nav>';
+    return str_replace('</footer>', $block.'</footer>', $html);
+});
+?>
 <!doctype html>
 <html lang="<?=e($lang)?>" dir="<?=e(locale_direction($lang))?>">
 <head>
