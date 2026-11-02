@@ -22,6 +22,8 @@ ob_start(static function (string $html) use ($lang): string {
     if ($logo !== '' && filter_var($logo, FILTER_VALIDATE_URL)) {
         $html = str_replace(['/assets/logo.svg', '/assets/logo-light.svg'], [e($logo), e($logo)], $html);
     }
+    $hero = trim((string)setting('hero_image_url', ''));
+    if ($hero !== '' && filter_var($hero, FILTER_VALIDATE_URL)) $html = str_replace('/assets/mediterranean.svg', e($hero), $html);
     $profiles = [
         'facebook_url' => ['Facebook', 'Facebook'],
         'instagram_url' => ['Instagram', 'Instagram'],

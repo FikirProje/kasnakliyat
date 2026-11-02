@@ -358,13 +358,14 @@ function admin_post(string $section, array $user): void
         save_setting('map_embed_url',$map); audit('settings.map_updated'); flash('success','Harita ayarları kaydedildi.'); return;
     }
     if ($section === 'settings' && $action === 'settings') {
-        $keys=['business_name','country_code','currency_code','timezone','location_label','contact_phone','contact_email','whatsapp','address','site_description','logo_url','favicon_url','pwa_name','pwa_description','theme_primary','theme_accent','theme_custom_css','facebook_url','instagram_url','linkedin_url','youtube_url','pinterest_url','pinterest_verify','google_site_verification','analytics_id','ai_provider','ai_model','mail_from','smtp_host','smtp_port','smtp_user','mail_subject_request','mail_subject_appointment','mail_subject_verification','mail_body_request','mail_body_appointment','mail_body_verification'];
+        $keys=['business_name','country_code','currency_code','timezone','location_label','contact_phone','contact_email','whatsapp','address','site_description','logo_url','favicon_url','pwa_name','pwa_description','hero_image_url','theme_primary','theme_accent','theme_custom_css','facebook_url','instagram_url','linkedin_url','youtube_url','pinterest_url','pinterest_verify','google_site_verification','analytics_id','ai_provider','ai_model','mail_from','smtp_host','smtp_port','smtp_user','mail_subject_request','mail_subject_appointment','mail_subject_verification','mail_body_request','mail_body_appointment','mail_body_verification'];
         foreach ($keys as $key) {
             if (!array_key_exists($key, $_POST)) continue;
             $value=admin_input($key,1000);
             if (in_array($key,['contact_email','mail_from'],true) && $value !== '' && !filter_var($value,FILTER_VALIDATE_EMAIL)) throw new InvalidArgumentException('E-posta adresini kontrol edin.');
             if (in_array($key,['facebook_url','instagram_url','linkedin_url','youtube_url','pinterest_url'],true) && $value !== '' && (!filter_var($value,FILTER_VALIDATE_URL) || !str_starts_with(strtolower($value),'https://'))) throw new InvalidArgumentException('Sosyal medya bağlantıları HTTPS adresi olmalı.');
             if (in_array($key,['logo_url','favicon_url'],true) && $value !== '' && (!filter_var($value,FILTER_VALIDATE_URL) || !str_starts_with(strtolower($value),'https://'))) throw new InvalidArgumentException('Logo ve favicon bağlantıları HTTPS adresi olmalı.');
+            if ($key==='hero_image_url' && $value !== '' && (!filter_var($value,FILTER_VALIDATE_URL) || !str_starts_with(strtolower($value),'https://'))) throw new InvalidArgumentException('Hero görseli HTTPS adresi olmalı.');
             if (in_array($key,['theme_primary','theme_accent'],true) && $value !== '' && !preg_match('/^#[0-9a-fA-F]{6}$/D',$value)) throw new InvalidArgumentException('Tema renkleri altı haneli HEX değeri olmalı.');
             if ($key==='theme_custom_css' && (str_contains(strtolower($value),'</style') || mb_strlen($value)>12000)) throw new InvalidArgumentException('Özel CSS geçersiz veya çok uzun.');
             if ($key==='ai_provider' && !in_array($value,['openai'],true)) throw new InvalidArgumentException('Geçersiz API sağlayıcısı.');
@@ -561,7 +562,11 @@ function admin_email_templates_page(): void
 
 function admin_settings_page(): void
 {
-    echo '<p class="notice"><a href="/admin/settings?map=1">Harita Görünümü ayarlarını aç →</a></p>';
+    if (($_GET['brand'] ?? '') === '1') {
+        ?><section class="panel"><h2>Marka ve Ana Görsel</h2><p class="muted">Tüm adresler HTTPS olmalıdır. Boş hero görseli varsayılan görseli kullanır.</p><form method="post"><?php admin_action('settings'); admin_field('Logo URL','logo_url',setting('logo_url'),'url'); admin_field('Favicon URL','favicon_url',setting('favicon_url'),'url'); admin_field('Hero görseli URL','hero_image_url',setting('hero_image_url'),'url'); admin_field('PWA uygulama adı','pwa_name',setting('pwa_name') ?: setting('business_name','Kaş Nakliyat')); admin_textarea('PWA açıklaması','pwa_description',setting('pwa_description'),2); ?><button>Marka Ayarlarını Kaydet</button></form><p><a href="/admin/settings">← Ayarlara Dön</a></p></section><?php
+        return;
+    }
+    echo '<p class="notice"><a href="/admin/settings?brand=1">Marka ve Ana Görsel ayarlarını aç →</a> · <a href="/admin/settings?map=1">Harita Görünümü ayarlarını aç →</a></p>';
     if (($_GET['map'] ?? '') === '1') {
         ?><section class="panel"><h2>Harita Görünümü</h2><p class="muted">İsterseniz Google Maps embed URL’si verin. Boş bırakıldığında adres ayarından harita oluşturulur.</p><form method="post"><?php admin_action('map_settings'); admin_field('HTTPS harita embed adresi','map_embed_url',setting('map_embed_url'),'url'); ?><button>Harita Ayarını Kaydet</button></form><p><a href="/admin/settings">← Ayarlara Dön</a></p></section><?php
         return;
