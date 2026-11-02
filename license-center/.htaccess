@@ -1,6 +1,7 @@
 Options -Indexes
 DirectoryIndex index.php
 RewriteEngine On
+RewriteRule ^install$ public/installer.php [L]
 RewriteRule ^assets(/.*)?$ public/$0 [L]
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
