@@ -111,7 +111,7 @@ function enqueue_ai_job(int $articleId, string $lang, string $mode, string $prom
 /** Atomically claim one job. Stale leases are recovered only after the request timeout has elapsed. */
 function integration_claim(string $table, string $ready, string $running): ?array
 {
-    if (!in_array($table, ['jobs', 'mail_queue'], true)) {
+    if (!in_array($table, ['jobs', 'mail_queue', 'notification_queue'], true)) {
         throw new InvalidArgumentException('Invalid queue');
     }
     db()->exec('BEGIN IMMEDIATE');
@@ -119,9 +119,13 @@ function integration_claim(string $table, string $ready, string $running): ?arra
         if ($table === 'jobs') {
             query("UPDATE jobs SET status='queued',error='İşlem kesintisi sonrası yeniden sıraya alındı.',updated_at=datetime('now') WHERE status='running' AND updated_at < datetime('now','-10 minutes') AND attempts < 3");
             query("UPDATE jobs SET status='failed',error='İşlem deneme sınırına ulaştı.',updated_at=datetime('now') WHERE status='running' AND updated_at < datetime('now','-10 minutes') AND attempts >= 3");
-        } else {
+        } elseif ($table === 'mail_queue') {
             query("UPDATE mail_queue SET status='queued',last_error='İşlem kesintisi sonrası yeniden sıraya alındı.',claimed_at=NULL WHERE status='sending' AND (claimed_at IS NULL OR claimed_at < datetime('now','-10 minutes')) AND attempts < 3");
             query("UPDATE mail_queue SET status='failed',last_error='İşlem deneme sınırına ulaştı.',claimed_at=NULL WHERE status='sending' AND (claimed_at IS NULL OR claimed_at < datetime('now','-10 minutes')) AND attempts >= 3");
+        }
+        else {
+            query("UPDATE notification_queue SET status='queued',last_error='İşlem kesintisi sonrası yeniden sıraya alındı.',claimed_at=NULL WHERE status='sending' AND (claimed_at IS NULL OR claimed_at < datetime('now','-10 minutes')) AND attempts < 3");
+            query("UPDATE notification_queue SET status='failed',last_error='İşlem deneme sınırına ulaştı.',claimed_at=NULL WHERE status='sending' AND (claimed_at IS NULL OR claimed_at < datetime('now','-10 minutes')) AND attempts >= 3");
         }
         $job = row("SELECT * FROM $table WHERE status=? AND attempts < 3 ORDER BY id LIMIT 1", [$ready]);
         if ($job) {
@@ -134,6 +138,32 @@ function integration_claim(string $table, string $ready, string $running): ?arra
         db()->exec('ROLLBACK');
         throw $error;
     }
+}
+
+function enqueue_notification(string $channel, string $recipient, string $message): int
+{
+    if (!in_array($channel, ['sms','whatsapp'], true) || $recipient === '' || preg_match('/[\r\n]/', $recipient) || mb_strlen($recipient) > 180 || mb_strlen($message) < 1 || mb_strlen($message) > 2000) {
+        throw new InvalidArgumentException('Bildirim kanalı, alıcı veya mesaj geçersiz.');
+    }
+    query("INSERT INTO notification_queue(channel,recipient,message,status,attempts,last_error,created_at) VALUES(?,?,?,'queued',0,'',datetime('now'))", [$channel, trim($recipient), trim($message)]);
+    return (int) db()->lastInsertId();
+}
+
+function send_notification_queue(int $limit = 10): array
+{
+    $counts = ['sent'=>0,'failed'=>0];
+    for ($index=0; $index<max(0,min($limit,50)); $index++) {
+        $item = integration_claim('notification_queue','queued','sending');
+        if (!$item) break;
+        $provider = $item['channel']==='sms' ? setting('sms_provider','none') : setting('whatsapp_provider','none');
+        $configured = $item['channel']==='sms'
+            ? (($provider==='netgsm' && envv('NETGSM_USER')!=='' && envv('NETGSM_PASSWORD')!=='') || ($provider==='iletimerkezi' && envv('ILETIMERKEZI_API_KEY')!=='') || ($provider==='twilio' && envv('TWILIO_ACCOUNT_SID')!=='' && envv('TWILIO_AUTH_TOKEN')!==''))
+            : (($provider==='cloud' && envv('WHATSAPP_ACCESS_TOKEN')!=='') || ($provider==='twilio' && envv('TWILIO_ACCOUNT_SID')!=='' && envv('TWILIO_AUTH_TOKEN')!==''));
+        $error = !$configured ? 'Sağlayıcı anahtarı eksik; güvenli test modu.' : 'Sağlayıcı adaptörü etkinleştirilmeden gerçek gönderim yapılmaz.';
+        query("UPDATE notification_queue SET status='failed',claimed_at=NULL,last_error=? WHERE id=?", [$error,$item['id']]);
+        $counts['failed']++;
+    }
+    return $counts;
 }
 
 function process_ai_jobs(int $limit = 3): array

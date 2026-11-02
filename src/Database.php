@@ -183,11 +183,23 @@ function migrate_themes(): void {
 }
 
 function migrate_user_preferences(): void {
-    if (row('SELECT version FROM migrations WHERE version=11')) return;
+    if (row('SELECT version FROM migrations WHERE version=11')) { migrate_notifications(); return; }
     db()->beginTransaction();
     try {
         db()->exec("CREATE TABLE user_preferences(user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, preference_key TEXT NOT NULL, preference_value TEXT NOT NULL DEFAULT '', updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(user_id,preference_key))");
         query("INSERT INTO migrations(version,applied_at) VALUES(11,datetime('now'))");
+        db()->commit();
+    } catch (Throwable $error) { if (db()->inTransaction()) db()->rollBack(); throw $error; }
+    migrate_notifications();
+}
+
+function migrate_notifications(): void {
+    if (row('SELECT version FROM migrations WHERE version=12')) return;
+    db()->beginTransaction();
+    try {
+        db()->exec("CREATE TABLE notification_queue(id INTEGER PRIMARY KEY,channel TEXT NOT NULL CHECK(channel IN ('sms','whatsapp')),recipient TEXT NOT NULL,message TEXT NOT NULL,status TEXT NOT NULL DEFAULT 'queued',attempts INTEGER NOT NULL DEFAULT 0,last_error TEXT NOT NULL DEFAULT '',created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,sent_at TEXT,claimed_at TEXT)");
+        db()->exec('CREATE INDEX notification_queue_status ON notification_queue(status,created_at)');
+        query("INSERT INTO migrations(version,applied_at) VALUES(12,datetime('now'))");
         db()->commit();
     } catch (Throwable $error) { if (db()->inTransaction()) db()->rollBack(); throw $error; }
 }

@@ -348,6 +348,10 @@ function admin_post(string $section, array $user): void
         $recipient=admin_input('test_recipient',254); if (!filter_var($recipient,FILTER_VALIDATE_EMAIL)) throw new InvalidArgumentException('Test alıcısı geçerli bir e-posta olmalı.');
         enqueue_mail($recipient,'TofiDesk SMTP test','Bu mesaj TofiDesk entegrasyon merkezinden oluşturulan SMTP testidir.',null); audit('smtp.test_queued',$recipient); flash('success','SMTP test mesajı kuyruğa alındı. Gönderim sonucunu E-posta kuyruğunda izleyin.'); return;
     }
+    if ($section === 'integrations' && $action === 'test_notification') {
+        $channel=admin_input('channel',20); $recipient=admin_input('recipient',180); $message=admin_input('message',2000);
+        $id=enqueue_notification($channel,$recipient,$message); audit('notification.test_queued',$channel.' #'.$id); flash('success','Bildirim test kuyruğuna alındı. Sağlayıcı anahtarı yoksa gerçek gönderim yapılmaz.'); return;
+    }
     if ($section === 'seo' && $action === 'homepage') {
         $lang=admin_lang(); foreach(['homepage_title'=>180,'homepage_intro'=>1000,'homepage_seo_title'=>180,'homepage_seo_description'=>400,'legal_controller'=>5000,'legal_processing'=>10000,'legal_rights'=>5000] as $field=>$limit) save_setting($field.'_'.$lang,admin_input($field,$limit));
         audit('homepage.updated',$lang); flash('success','Ana sayfa dil metinleri kaydedildi.'); return;
