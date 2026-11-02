@@ -65,6 +65,17 @@ try {
     save_setting('ai_provider', '  ');
     save_setting('ai_model', '');
     integration_check(ai_provider_setting() === 'openai' && ai_model_setting() === 'gpt-4.1-mini', 'blank saved AI settings retain supported defaults');
+$paytr = ['callback_id'=>'cb-1','merchant_oid'=>'order-1','status'=>'success','total_amount'=>'19900'];
+$paytr['hash'] = paytr_callback_signature($paytr, 'merchant-key', 'merchant-salt');
+integration_check(paytr_callback_valid($paytr, 'merchant-key', 'merchant-salt'), 'PayTR callback signature accepts a valid signed notification');
+$paytr['total_amount'] = '19901';
+integration_check(!paytr_callback_valid($paytr, 'merchant-key', 'merchant-salt'), 'PayTR callback signature rejects tampered amount');
+$iyzi = ['iyziEventType'=>'PAYMENT_API','paymentId'=>'p-1','paymentConversationId'=>'order-1','status'=>'SUCCESS'];
+integration_check(iyzico_direct_valid($iyzi, 'iyzi-secret', iyzico_direct_signature($iyzi, 'iyzi-secret')), 'iyzico V3 signature accepts a valid direct webhook');
+$body = '{"id":"evt_test"}'; $stripeTs = 1700000000; $stripeSecret = 'whsec_test';
+$stripeSig = hash_hmac('sha256', $stripeTs.'.'.$body, $stripeSecret);
+integration_check(stripe_signature_valid($body, 't='.$stripeTs.',v1='.$stripeSig, $stripeSecret, $stripeTs), 'Stripe signature accepts a valid raw-body webhook');
+integration_check(!stripe_signature_valid($body, 't=' . ($stripeTs-1000) . ',v1='.$stripeSig, $stripeSecret, $stripeTs), 'Stripe signature rejects an expired webhook');
     save_setting('ai_model', 'gpt-4.1');
     integration_check(ai_model_setting() === 'gpt-4.1', 'an explicit AI model is preserved');
     save_setting('ai_model', '');
