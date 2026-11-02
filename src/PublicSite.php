@@ -104,7 +104,8 @@ function public_request(string $lang, string $kind): array {
     $requestId = (int)db()->lastInsertId();
     if ($mediaId) { $q=db()->prepare('INSERT INTO request_media(request_id,media_id) VALUES(?,?)'); $q->execute([$requestId,$mediaId]); }
     if (filter_var(setting('contact_email'),FILTER_VALIDATE_EMAIL)) {
-        enqueue_mail(setting('contact_email'),'Kaş Nakliyat · '.$reference,'Yeni '.($kind==='quote'?'teklif':'randevu').' talebi. Ayrıntılar yönetim panelindedir. Referans: '.$reference,$requestId);
+        $subject=$kind==='quote'?setting('mail_subject_request','Yeni teklif talebi'):setting('mail_subject_appointment','Yeni randevu talebi');
+        enqueue_mail(setting('contact_email'),$subject.' · '.$reference,'Yeni '.($kind==='quote'?'teklif':'randevu').' talebi. Ayrıntılar yönetim panelindedir. Referans: '.$reference,$requestId);
     }
     audit('request.created',$reference);
     flash('success',t('request_received',$lang).' '.t('request_reference',$lang).': '.$reference.' '.t('request_pending',$lang));
