@@ -18,6 +18,15 @@ function lc_preflight(): void {
 }
 lc_preflight();
 setup();
+// Pricing cards may link to /contact?plan=... for backwards compatibility;
+// route a selected plan into the authenticated checkout flow instead.
+if ($path === '/contact' && isset($_GET['plan'])) {
+    $plan = (string) $_GET['plan'];
+    if (in_array($plan, ['Starter', 'Studio', 'Agency'], true)) {
+        header('Location: ./checkout?plan=' . rawurlencode($plan), true, 302);
+        exit;
+    }
+}
 // Keep plan entitlements enforced server-side even when a payment callback
 // creates the licence directly.
 lc_db()->exec("CREATE TRIGGER IF NOT EXISTS license_plan_domain_limit AFTER INSERT ON licenses BEGIN UPDATE licenses SET domain_limit=CASE WHEN product LIKE '%Agency%' THEN 10 WHEN product LIKE '%Studio%' THEN 3 ELSE 1 END WHERE id=NEW.id; END");
