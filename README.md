@@ -45,6 +45,8 @@ Bu görev zaten yalıtılmıştır. Mevcut checkout'u kullanın; kullanıcı öz
 
 OpenAI uyumlu servisler için yönetim panelinden `compatible` sağlayıcısını seçin ve sunucu ortamında `AI_BASE_URL` tanımlayın. Örnekler: `https://openrouter.ai/api`, `https://api.together.xyz` veya yerel Ollama için `http://127.0.0.1:11434/v1`. Gerekirse `AI_API_KEY` sağlayıcının anahtarıdır; yerel anahtarsız servislerde boş bırakılabilir. `AI_BASE_URL` yalnızca güvenilen bir yönetici tarafından yapılandırılmalı ve üretimde HTTPS tercih edilmelidir.
 
+Kök adrese (`/`) gelen ziyaretçiler için dil önceliği güvenilir proxy’nin `CF-IPCountry` veya `GEOIP_COUNTRY_CODE` başlığı, ardından tarayıcının `Accept-Language` tercihi ve son olarak Türkçe varsayılandır. Kullanıcı dil seçicisiyle bu otomatik tercihi her zaman değiştirebilir.
+
 Sunucuda `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` sağlayın. Parola dışındaki alanlar yönetim panelinde de ayarlanabilir; ortam değişkenleri önceliklidir. Uzak SMTP için doğrulanmış STARTTLS veya 465/TLS zorunludur. Şifresiz yerel relay yalnız `SMTP_ALLOW_INSECURE_LOCAL=1` ile loopback üzerinde kullanılabilir. Gönderimler UTF-8 düz metindir.
 
 SMS/WhatsApp için `.env.example` içindeki sağlayıcı değişkenlerini sunucu ortamına ekleyin ve Yönetim > Entegrasyonlar bölümünden sağlayıcıyı seçin. NetGSM, iletiMerkezi, Twilio SMS/WhatsApp ve Meta WhatsApp Cloud API kuyruk işçisiyle gönderilir. Anahtarlar eksikse bildirim `failed` olarak kaydedilir; canlı gönderim yapılmaz.
