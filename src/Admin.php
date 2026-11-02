@@ -441,7 +441,7 @@ function admin_date_label(string $lang): string
 function admin_layout(string $title,string $section,array $user,string $body): void
 {
     $lang = admin_user_lang($user);
-    ob_start(static function(string $html) use ($lang): string { return str_replace(date('d.m.Y'),admin_date_label($lang),$html); });
+    ob_start(static function(string $html) use ($lang): string { return str_replace(['Randevular',date('d.m.Y')],['Randevu Takvimi',admin_date_label($lang)],$html); });
     $direction = locale_direction($lang);
     $nav=['dashboard'=>['◫','Genel bakış'],'requests'=>['↗','Teklif talepleri'],'appointments'=>['▦','Randevular'],'content'=>['▤','İçerik stüdyosu'],'languages'=>['文','Dil paketleri'],'themes'=>['◐','Tema kütüphanesi'],'licenses'=>['◇','Lisans'],'jobs'=>['✧','Yapay zekâ işleri'],'media'=>['▧','Görsel kütüphanesi'],'gallery'=>['▦','Galeri'],'seo'=>['◎','SEO merkezi'],'mail'=>['✉','E-posta kuyruğu'],'settings'=>['⚙','Ayarlar'],'email-templates'=>['✉','E-posta şablonları'],'notification-rules'=>['♧','Bildirim kuralları'],'integrations'=>['⚡','Entegrasyonlar'],'security'=>['🔒','Hesap güvenliği'],'users'=>['♙','Kullanıcılar'],'backup'=>['↓','Yedekleme'],'audit'=>['≡','İşlem kayıtları']];
     $nav['legal']=['§',admin_section_title('legal',$lang)];
