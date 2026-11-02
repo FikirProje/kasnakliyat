@@ -18,7 +18,9 @@ function admin_allowed(string $section, array $user): bool
 
 function admin_status(string $status): string
 {
-    $labels = ['new'=>'Yeni talep', 'quoted'=>'Teklif verildi', 'proposed'=>'Tarih önerildi', 'confirmed'=>'Kesinleşti', 'rejected'=>'Reddedildi', 'draft'=>'Taslak', 'review'=>'İncelemede', 'published'=>'Yayında', 'queued'=>'Sırada', 'running'=>'Çalışıyor', 'completed'=>'Tamamlandı', 'failed'=>'Hata', 'sent'=>'Gönderildi', 'pending'=>'Bekliyor'];
+    $labels = ['tr'=>['new'=>'Yeni talep','quoted'=>'Teklif verildi','proposed'=>'Tarih önerildi','confirmed'=>'Kesinleşti','rejected'=>'Reddedildi','draft'=>'Taslak','review'=>'İncelemede','published'=>'Yayında','queued'=>'Sırada','running'=>'Çalışıyor','completed'=>'Tamamlandı','failed'=>'Hata','sent'=>'Gönderildi','pending'=>'Bekliyor'],'en'=>['new'=>'New request','quoted'=>'Quote sent','proposed'=>'Date proposed','confirmed'=>'Confirmed','rejected'=>'Rejected','draft'=>'Draft','review'=>'In review','published'=>'Published','queued'=>'Queued','running'=>'Running','completed'=>'Completed','failed'=>'Failed','sent'=>'Sent','pending'=>'Pending']];
+    $lang = (string)($_REQUEST['lang'] ?? 'en');
+    $labels = $labels[$lang] ?? $labels['en'];
     return '<span class="badge badge-'.e($status).'">'.e($labels[$status] ?? $status).'</span>';
 }
 
