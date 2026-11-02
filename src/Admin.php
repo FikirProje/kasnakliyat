@@ -4,7 +4,7 @@ declare(strict_types=1);
 function admin_roles(string $section): array
 {
     return match ($section) {
-        'settings', 'email-templates', 'notification-rules', 'integrations', 'security', 'users', 'audit', 'backup', 'mail', 'languages', 'themes', 'licenses' => ['admin'],
+        'settings', 'email-templates', 'notification-rules', 'integrations', 'security', 'users', 'audit', 'backup', 'mail', 'languages', 'themes', 'licenses', 'legal' => ['admin'],
         'content', 'editor', 'media', 'gallery', 'seo', 'jobs' => ['admin', 'editor'],
         'requests', 'appointments' => ['admin', 'operator'],
         default => ['admin', 'editor', 'operator'],
@@ -225,7 +225,7 @@ function handle_admin(string $path): void
     $section = trim(substr($path, strlen('/admin')), '/') ?: 'dashboard';
     if ($section === 'login') { admin_login_page(); return; }
     $user = require_login();
-    if (!in_array($section, ['dashboard','logout','requests','appointments','content','editor','media','gallery','seo','settings','email-templates','notification-rules','integrations','users','jobs','audit','backup','mail','languages','themes','licenses'], true)) { http_response_code(404); admin_layout('Bulunamadı','dashboard',$user,'<div class="panel">Bu sayfa bulunamadı.</div>'); return; }
+    if (!in_array($section, ['dashboard','logout','requests','appointments','content','editor','media','gallery','seo','settings','email-templates','notification-rules','integrations','users','jobs','audit','backup','mail','languages','themes','licenses','legal'], true)) { http_response_code(404); admin_layout('Bulunamadı','dashboard',$user,'<div class="panel">Bu sayfa bulunamadı.</div>'); return; }
     require_role(admin_roles($section));
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         csrf_verify();
@@ -238,14 +238,14 @@ function handle_admin(string $path): void
         redirect($destination);
     }
     if ($section === 'logout') { http_response_code(405); header('Allow: POST'); return; }
-    $titles=array_fill_keys(['dashboard','requests','appointments','content','editor','media','gallery','seo','settings','email-templates','notification-rules','integrations','security','users','jobs','audit','backup','mail','languages','themes','licenses'], '');
+    $titles=array_fill_keys(['dashboard','requests','appointments','content','editor','media','gallery','seo','settings','email-templates','notification-rules','integrations','security','users','jobs','audit','backup','mail','languages','themes','licenses','legal'], '');
     foreach (array_keys($titles) as $key) $titles[$key]=admin_section_title($key, admin_user_lang($user));
     ob_start();
     match($section) {
         'requests','appointments' => admin_requests_page($section),
         'content' => admin_content_page(), 'editor'=>admin_editor_page(), 'media'=>admin_media_page(), 'gallery'=>admin_gallery_page(), 'seo'=>admin_seo_page(),
         'settings'=>admin_settings_page(), 'email-templates'=>admin_email_templates_page(), 'notification-rules'=>admin_notification_rules_page(), 'integrations'=>admin_integrations_page(), 'security'=>admin_security_page($user), 'users'=>admin_users_page(), 'jobs'=>admin_jobs_page(), 'audit'=>admin_audit_page(),
-        'backup'=>admin_backup_page(), 'mail'=>admin_mail_page(), 'languages'=>admin_languages_page(), 'themes'=>admin_themes_page(), 'licenses'=>admin_licenses_page(), default=>admin_dashboard($user),
+        'backup'=>admin_backup_page(), 'mail'=>admin_mail_page(), 'languages'=>admin_languages_page(), 'themes'=>admin_themes_page(), 'licenses'=>admin_licenses_page(), 'legal'=>admin_legal_page(), default=>admin_dashboard($user),
     };
     admin_layout($titles[$section],$section,$user,(string)ob_get_clean());
 }
@@ -375,6 +375,12 @@ function admin_post(string $section, array $user): void
         $channel=admin_input('channel',20); $recipient=admin_input('recipient',180); $message=admin_input('message',2000);
         $id=enqueue_notification($channel,$recipient,$message); audit('notification.test_queued',$channel.' #'.$id); flash('success','Bildirim test kuyruğuna alındı. Sağlayıcı anahtarı yoksa gerçek gönderim yapılmaz.'); return;
     }
+    if ($section === 'legal' && $action === 'legal') {
+        $lang=admin_lang();
+        save_setting('legal_terms_'.$lang,admin_input('legal_terms',10000));
+        save_setting('legal_sla_'.$lang,admin_input('legal_sla',10000));
+        audit('legal.updated',$lang); flash('success','Yasal metinler kaydedildi.'); return;
+    }
     if ($section === 'seo' && $action === 'homepage') {
     $lang=admin_lang(); foreach(['homepage_title'=>180,'homepage_intro'=>1000,'homepage_seo_title'=>180,'homepage_seo_description'=>400,'legal_controller'=>5000,'legal_processing'=>10000,'legal_rights'=>5000,'legal_terms'=>10000,'legal_sla'=>10000] as $field=>$limit) save_setting($field.'_'.$lang,admin_input($field,$limit));
         audit('homepage.updated',$lang); flash('success','Ana sayfa dil metinleri kaydedildi.'); return;
@@ -413,6 +419,7 @@ function admin_layout(string $title,string $section,array $user,string $body): v
     $lang = admin_user_lang($user);
     $direction = locale_direction($lang);
     $nav=['dashboard'=>['◫','Genel bakış'],'requests'=>['↗','Teklif talepleri'],'appointments'=>['▦','Randevular'],'content'=>['▤','İçerik stüdyosu'],'languages'=>['文','Dil paketleri'],'themes'=>['◐','Tema kütüphanesi'],'licenses'=>['◇','Lisans'],'jobs'=>['✧','Yapay zekâ işleri'],'media'=>['▧','Görsel kütüphanesi'],'gallery'=>['▦','Galeri'],'seo'=>['◎','SEO merkezi'],'mail'=>['✉','E-posta kuyruğu'],'settings'=>['⚙','Ayarlar'],'email-templates'=>['✉','E-posta şablonları'],'notification-rules'=>['♧','Bildirim kuralları'],'integrations'=>['⚡','Entegrasyonlar'],'security'=>['🔒','Hesap güvenliği'],'users'=>['♙','Kullanıcılar'],'backup'=>['↓','Yedekleme'],'audit'=>['≡','İşlem kayıtları']];
+    $nav['legal']=['§',admin_section_title('legal',$lang)];
     foreach ($nav as $key => $item) $nav[$key][1] = admin_section_title($key, $lang);
     ?><!doctype html><html lang="<?= e($lang) ?>" dir="<?= e($direction) ?>"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title><?= e($title) ?> · Kaş Nakliyat</title><link rel="stylesheet" href="/assets/admin.css"></head><body><a href="#main" class="skip"><?= e(admin_t('skip',$lang)) ?></a><aside class="sidebar"><a class="brand" href="/admin">KAŞ<span>NAKLİYAT</span></a><span class="sidebar-caption"><?= e(admin_t('management',$lang)) ?></span><nav aria-label="<?= e(admin_t('management',$lang)) ?>"><?php foreach($nav as $key=>[$icon,$label]): if(!admin_allowed($key,$user))continue; ?><a class="<?= ($section===$key || ($section==='editor'&&$key==='content'))?'active':'' ?>" href="/admin<?= $key==='dashboard'?'':'/'.$key ?>"><span aria-hidden="true"><?= $icon ?></span><?= e($label) ?></a><?php endforeach ?></nav><div class="sidebar-bottom"><a href="/tr/"><?= e(admin_t('open_site',$lang)) ?> ↗</a><form method="post" class="language-form"><?= admin_action('set_admin_locale'); admin_select(admin_t('language',$lang),'lang',admin_locales(),$lang) ?><button class="secondary" type="submit"><?= e(admin_t('save_language',$lang)) ?></button></form><p><?= e($user['name']) ?><small><?= e($user['role']) ?></small></p><form method="post" action="/admin/logout"><?= csrf_field() ?><button class="logout" type="submit"><?= e(admin_t('logout',$lang)) ?></button></form></div></aside><div class="workspace"><header class="topbar"><span>Kaş Nakliyat <span class="crumb">/ <?= e($title) ?></span></span><span class="topbar-right"><?= e(strtoupper($lang)) ?> <span class="avatar"><?= e(mb_substr($user['name'],0,1)) ?></span></span></header><main id="main" class="main"><div class="page-heading"><div><p class="eyebrow"><?= e(admin_t('workspace',$lang)) ?></p><h1><?= e($title) ?></h1></div><time datetime="<?= date('Y-m-d') ?>"><?= date('d.m.Y') ?></time></div><?php foreach(take_flash() as $flash): ?><p class="notice <?= e($flash['kind']) ?>" role="status"><?= e($flash['message']) ?></p><?php endforeach ?><?= $body ?></main><footer class="admin-footer">Kaş Nakliyat · Bağımsız yönetim platformu <span>Europe/Istanbul</span></footer></div></body></html><?php
 }
@@ -477,6 +484,12 @@ function admin_languages_page(): void
 function admin_seo_page(): void
 {
     $lang=admin_lang(); ?><div class="split"><section class="panel"><h2>Ana sayfa dil metinleri</h2><form method="get"><?php admin_select('Dil','lang',admin_locales(),$lang) ?><button class="secondary">Dili seç</button></form><form method="post"><?php admin_action('homepage') ?><input type="hidden" name="lang" value="<?= e($lang) ?>"><?php admin_field('Ana başlık (boşsa varsayılan çeviri)','homepage_title',setting('homepage_title_'.$lang)); admin_textarea('Açıklama (boşsa varsayılan çeviri)','homepage_intro',setting('homepage_intro_'.$lang),4); admin_field('Bağımsız SEO başlığı','homepage_seo_title',setting('homepage_seo_title_'.$lang)); admin_textarea('Bağımsız meta açıklama','homepage_seo_description',setting('homepage_seo_description_'.$lang),3); admin_textarea('KVKK · veri sorumlusu ve iletişim','legal_controller',setting('legal_controller_'.$lang),3); admin_textarea('KVKK · işleme amacı, hukuki sebep, saklama ve aktarım','legal_processing',setting('legal_processing_'.$lang),6); admin_textarea('KVKK · haklar ve başvuru kanalları','legal_rights',setting('legal_rights_'.$lang),4) ?><button>Kaydet</button></form></section><section class="panel"><h2>Teknik SEO</h2><ul class="checklist"><li><a href="/sitemap.xml">Dinamik sitemap ↗</a></li><li><a href="/robots.txt">Robots yönergeleri ↗</a></li><li>Canonical ve karşılıklı hreflang bağlantıları</li><li>Yayın durumuna göre indekslenebilirlik</li><li>Open Graph, X Cards ve JSON-LD</li><li>URL değişikliklerinde 301 yönlendirme kaydı</li></ul><p class="muted">Her içerik ve dil için SEO başlığı, açıklaması ve hedef kelimeleri içerik editöründen düzenleyin. Hedef kelimeler meta keywords olarak yayınlanmaz.</p><p class="muted">Canlı alan adını APP_URL ile ayarlayın. Search Console ve Analytics kimlikleri işletme hesabıyla ayrıca doğrulanmalıdır.</p></section></div><section class="panel"><h2>Yönlendirme kayıtları</h2><?php $items=rows('SELECT * FROM redirects ORDER BY id DESC LIMIT 100'); if(!$items): ?><p class="muted">Henüz URL değişikliği yok.</p><?php else: ?><div class="table-wrap"><table><thead><tr><th>Dil</th><th>Eski kısa ad</th><th>Yeni kısa ad</th></tr></thead><tbody><?php foreach($items as $item): ?><tr><td><?= e($item['lang']) ?></td><td><?= e($item['old_slug']) ?></td><td><?= e($item['new_slug']) ?></td></tr><?php endforeach ?></tbody></table></div><?php endif ?></section><?php
+}
+
+function admin_legal_page(): void
+{
+    $lang=admin_lang();
+    ?><div class="split"><section class="panel"><h2><?=e(admin_section_title('legal',$lang))?></h2><p class="muted">Her dil için kullanım şartları ve destek hizmet seviyesi metinlerini yönetin.</p><form method="post"><?php admin_action('legal'); ?><input type="hidden" name="lang" value="<?=e($lang)?>"><?php admin_select('Dil','lang',admin_locales(),$lang); admin_textarea('Kullanım şartları','legal_terms',setting('legal_terms_'.$lang),8); admin_textarea('Destek SLA metni','legal_sla',setting('legal_sla_'.$lang),8); ?><button>Yasal metinleri kaydet</button></form></section><section class="panel"><h2>Public bağlantılar</h2><p><a href="/<?=e($lang)?>/kullanim-sartlari/">Kullanım şartlarını aç ↗</a></p><p><a href="/<?=e($lang)?>/destek-sla/">Destek SLA sayfasını aç ↗</a></p></section></div><?php
 }
 
 function admin_themes_page(): void
