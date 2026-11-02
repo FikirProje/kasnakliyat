@@ -4,6 +4,8 @@ ob_start(static function (string $html) use ($lang): string {
     if ($brand !== '') {
         $html = str_replace(['Kaş Nakliyat', 'KAŞ NAKLİYAT'], [e($brand), e($brand)], $html);
     }
+    $location = trim((string)setting('location_label', ''));
+    if ($location !== '') $html = str_replace('KAŞ · ANTALYA', e($location), $html);
     $logo = trim((string)setting('logo_url', ''));
     if ($logo !== '' && filter_var($logo, FILTER_VALIDATE_URL)) {
         $html = str_replace(['/assets/logo.svg', '/assets/logo-light.svg'], [e($logo), e($logo)], $html);
