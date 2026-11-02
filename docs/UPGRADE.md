@@ -6,6 +6,7 @@
 2. Copy `.env` and the storage directory to a protected location.
 3. Confirm the PHP version and required extensions in `docs/GO_LIVE.md`.
 4. Put the site into maintenance mode at the web-server level if the database is busy.
+   The application updater also uses `storage/maintenance.flag`; if a host process is interrupted, remove that flag after reviewing the update log to restore public traffic.
 
 ## Upgrade procedure
 

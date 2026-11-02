@@ -21,6 +21,9 @@ function storage_path(string $sub = ''): string {
 foreach (['', 'sessions', 'logs', 'media/originals', 'media/variants', 'backups'] as $directory) {
     if (!is_dir(storage_path($directory))) mkdir(storage_path($directory), 0700, true);
 }
+if (PHP_SAPI !== 'cli' && is_file(storage_path('maintenance.flag'))) {
+    http_response_code(503); header('Retry-After: 120'); header('Content-Type: text/html; charset=utf-8'); echo '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Bakım çalışması</title><style>body{font:16px system-ui;background:#092b3d;color:#fff;display:grid;place-items:center;min-height:100vh;margin:0}main{max-width:560px;padding:32px;text-align:center}h1{font-size:32px}p{color:#d7e8ec}</style><main><h1>Planlı bakım çalışması</h1><p>Güvenli bir güncelleme uygulanıyor. Lütfen birkaç dakika sonra tekrar deneyin.</p></main>'; exit;
+}
 ini_set('log_errors', '1');
 ini_set('display_errors', '0');
 ini_set('error_log', storage_path('logs/php.log'));
