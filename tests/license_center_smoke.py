@@ -12,6 +12,7 @@ assert "LICENSE_INSTALL_TOKEN" not in ENV, "obsolete installer token remains"
 assert "Tokenless first setup" in INSTALLER, "tokenless installer copy missing"
 assert "buyer_session_epoch" in INDEX, "buyer session revocation missing"
 assert "lc_send_account_email" in ACCOUNT_ROUTES, "account mail transport missing"
+assert "lc_smtp_send" in ACCOUNT_ROUTES, "SMTP transport missing"
 assert "storage/outbox" in ACCOUNT_ROUTES, "test-mode outbox missing"
 for route in ["/shop", "/pricing", "/account/register", "/account/forgot-password", "/orders", "/themes"]:
     assert f"$path==='{route}'" in INDEX, f"route missing: {route}"

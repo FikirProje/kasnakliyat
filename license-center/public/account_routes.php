@@ -13,8 +13,36 @@ if (!is_dir($sessionPath)) mkdir($sessionPath, 0700, true);
 session_save_path($sessionPath);
 if (session_status() !== PHP_SESSION_ACTIVE) session_start();
 
+function lc_smtp_send(string $to, string $subject, string $body): bool
+{
+    $host = lc_env('LC_SMTP_HOST');
+    $port = (int)lc_env('LC_SMTP_PORT', '587');
+    $user = lc_env('LC_SMTP_USER');
+    $pass = lc_env('LC_SMTP_PASSWORD');
+    $from = lc_env('LC_MAIL_FROM');
+    if ($host === '' || $from === '') return false;
+    $secure = strtolower(lc_env('LC_SMTP_SECURE', 'tls'));
+    $transport = $secure === 'ssl' ? 'ssl://' : '';
+    $socket = @stream_socket_client($transport.$host.':'.$port, $errno, $error, 10, STREAM_CLIENT_CONNECT);
+    if (!$socket) return false;
+    stream_set_timeout($socket, 10);
+    $read = static function () use ($socket): string { $line=''; do { $line.=fgets($socket, 512) ?: ''; } while (isset($line[3]) && $line[3] === '-'); return $line; };
+    $write = static function (string $command) use ($socket, $read): void { fwrite($socket, $command."\r\n"); $reply=$read(); if ($reply === '' || (int)substr($reply, 0, 3) >= 400) throw new RuntimeException('SMTP command failed.'); };
+    try {
+        $read();
+        $write('EHLO tofidesk');
+        if ($secure === 'tls') { $write('STARTTLS'); if (!stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT)) throw new RuntimeException('SMTP TLS failed.'); $write('EHLO tofidesk'); }
+        if ($user !== '') { $write('AUTH LOGIN'); $write(base64_encode($user)); $write(base64_encode($pass)); }
+        $write('MAIL FROM:<'.$from.'>'); $write('RCPT TO:<'.$to.'>'); $write('DATA');
+        fwrite($socket, 'From: '.$from."\r\nTo: ".$to."\r\nSubject: ".$subject."\r\nContent-Type: text/plain; charset=UTF-8\r\n\r\n".$body."\r\n.\r\n");
+        $reply=$read(); $write('QUIT'); fclose($socket);
+        return (int)substr($reply, 0, 3) < 400;
+    } catch (Throwable) { fclose($socket); return false; }
+}
+
 function lc_send_account_email(string $to, string $subject, string $body): void
 {
+    if (lc_smtp_send($to, $subject, $body)) return;
     $from = lc_env('LC_MAIL_FROM', '');
     if ($from !== '' && function_exists('mail')) {
         $headers = 'From: '.$from."\r\n".'Content-Type: text/plain; charset=UTF-8';
