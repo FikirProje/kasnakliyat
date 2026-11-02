@@ -721,5 +721,7 @@ function integration_remove_tree(string $directory): void
             unlink($file->getPathname());
         }
     }
-    rmdir($directory);
+    // A concurrent filesystem watcher may briefly retain the directory on
+    // shared hosting; cleanup is best-effort and must not taint test output.
+    @rmdir($directory);
 }
