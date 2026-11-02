@@ -471,7 +471,7 @@ function create_backup(): string
         $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($work, FilesystemIterator::SKIP_DOTS));
         foreach ($iterator as $file) {
             if ($file->isFile() && !$file->isLink()) {
-                $relative = substr($file->getPathname(), strlen($work) + 1);
+                $relative = str_replace('\\', '/', substr($file->getPathname(), strlen($work) + 1));
                 $hashes[$relative] = hash_file('sha256', $file->getPathname());
             }
         }
@@ -505,7 +505,10 @@ function integration_write_archive(string $directory, string $destination): void
         if ($file->isLink() || (!$file->isDir() && !$file->isFile())) {
             throw new RuntimeException('Yedek yalnızca normal dosya ve dizinler içerebilir.');
         }
-        $relative = substr($file->getPathname(), strlen($directory) + 1);
+        // RecursiveDirectoryIterator uses the host separator. Archive member
+        // names must always use POSIX separators so validation and restore are
+        // identical on Windows and Unix hosts.
+        $relative = str_replace('\\', '/', substr($file->getPathname(), strlen($directory) + 1));
         if ($relative === '' || preg_match('#(?:^|/)\.\.?(?:/|$)|[\x00-\x1f\x7f\\\\]#', $relative)) {
             throw new RuntimeException('Yedek dosyası adı geçersiz.');
         }
