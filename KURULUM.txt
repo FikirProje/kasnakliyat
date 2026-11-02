@@ -20,6 +20,14 @@ TOFIDESK — SUNUCUYA YÜKLEME
 5. SMTP, AI, SMS/WhatsApp ve ödeme sağlayıcılarını yalnızca yönetim panelinden
    veya sunucunun özel ortam değişkenlerinden yapılandırın. Gerçek sırları ZIP'e,
    Git'e veya destek mesajlarına yazmayın.
+   Lisans merkezi hesap doğrulama/şifre sıfırlama e-postaları için LC_SMTP_HOST,
+   LC_SMTP_PORT, LC_SMTP_USER, LC_SMTP_PASSWORD, LC_SMTP_SECURE ve LC_MAIL_FROM
+   tanımlayın. SMTP yoksa mesajlar yalnızca özel storage/outbox test kuyruğuna alınır.
+
+   Admin > Legal bölümünde kullanım şartları ve SLA metinlerini 14 dil için
+   kontrol edin. Ziyaretçi çerez bildiriminde “Kabul et” seçmeden analytics
+   yüklenmez; IMAP_RETENTION_DAYS (0=kapalı, 1–3650 gün) gizlilik politikanıza
+   göre ayarlanmalıdır.
 
 6. Worker görevleri için cron:
    php /uygulamanin/tam/yolu/bin/worker.php all
@@ -27,4 +35,13 @@ TOFIDESK — SUNUCUYA YÜKLEME
    php /uygulamanin/tam/yolu/bin/console.php backup
 
 7. Yayına almadan önce admin girişini, 14 dili, RTL dilleri, SMTP testini,
-   sitemap/robots, lisans aktivasyonunu ve yedek geri yüklemeyi kontrol edin.
+   şifre sıfırlamayı, hesap doğrulamayı, sitemap/robots, canonical/hreflang,
+   cookie consent, lisans aktivasyonunu ve yedek geri yüklemeyi kontrol edin.
+
+PLESK/cPANEL KISA KONTROLÜ
+- Alan adı belge kökü public/ (Plesk httpdocs/public) olmalı; uygulama kökü
+  ve storage web üzerinden erişilebilir olmamalıdır.
+- storage/ yazılabilir, PHP sürümü 8.2+, PDO SQLite/mbstring/fileinfo/cURL/
+  OpenSSL/GD-WebP/zlib etkin olmalı.
+- Cron: php /tam/yol/bin/worker.php all
+- İlk kurulumdan sonra /install kapanır; yönetim: /admin/login.
