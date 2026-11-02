@@ -4,7 +4,7 @@ declare(strict_types=1);
 function admin_roles(string $section): array
 {
     return match ($section) {
-        'settings', 'users', 'audit', 'backup', 'mail', 'languages', 'themes', 'licenses' => ['admin'],
+        'settings', 'integrations', 'users', 'audit', 'backup', 'mail', 'languages', 'themes', 'licenses' => ['admin'],
         'content', 'editor', 'media', 'gallery', 'seo', 'jobs' => ['admin', 'editor'],
         'requests', 'appointments' => ['admin', 'operator'],
         default => ['admin', 'editor', 'operator'],
@@ -201,13 +201,19 @@ function admin_apply_job(): void
     redirect('/admin/editor?id='.$job['article_id'].'&lang='.$job['lang']);
 }
 
+function admin_integrations_page(): void
+{
+    $checks=['SMTP yapılandırması'=>setting('smtp_host')!==''&&setting('mail_from')!=='','OpenAI anahtarı'=>envv('OPENAI_API_KEY')!=='','SMS sağlayıcısı'=>setting('sms_provider','none')!=='none','WhatsApp sağlayıcısı'=>setting('whatsapp_provider','none')!=='none','PayTR anahtarı'=>envv('PAYTR_MERCHANT_KEY')!=='','Stripe webhook'=>envv('STRIPE_WEBHOOK_SECRET')!=='','Cron/worker'=>is_file(ROOT.'/bin/console.php')];
+    ?><div class="split"><section class="panel"><h2>Bildirim kanalları</h2><p class="muted">Sağlayıcı sırları sunucu ortamından okunur; panelde yalnız durum gösterilir.</p><form method="post"><?php admin_action('integrations'); admin_field('SMTP sunucusu','smtp_host',setting('smtp_host')); admin_field('SMTP portu','smtp_port',setting('smtp_port','587'),'number'); admin_field('SMTP kullanıcı adı','smtp_user',setting('smtp_user')); admin_select('SMS sağlayıcısı','sms_provider',['none'=>'Kapalı','netgsm'=>'NetGSM','iletimerkezi'=>'İleti Merkezi','twilio'=>'Twilio'],setting('sms_provider','none')); admin_field('SMS gönderen adı/numarası','sms_sender',setting('sms_sender')); admin_select('WhatsApp sağlayıcısı','whatsapp_provider',['none'=>'Kapalı','cloud'=>'Meta WhatsApp Cloud API','twilio'=>'Twilio WhatsApp'],setting('whatsapp_provider','none')); admin_select('E-posta bildirimi','notification_email_enabled',['1'=>'Açık','0'=>'Kapalı'],setting('notification_email_enabled','1')); admin_select('SMS bildirimi','notification_sms_enabled',['1'=>'Açık','0'=>'Kapalı'],setting('notification_sms_enabled','0')); admin_select('WhatsApp bildirimi','notification_whatsapp_enabled',['1'=>'Açık','0'=>'Kapalı'],setting('notification_whatsapp_enabled','0')); ?><button>Ayarları kaydet</button></form></section><section class="panel"><h2>Entegrasyon sağlığı</h2><ul class="checklist"><?php foreach($checks as $label=>$ok): ?><li><?= $ok?'✓':'○' ?> <?=e($label)?> <span class="badge"><?= $ok?'Hazır':'Test modu / eksik' ?></span></li><?php endforeach ?></ul><p class="notice">Gerçek anahtarları sunucu ortamına ekleyin; ZIP paketlerine sır dahil edilmez.</p></section></div><?php
+}
+
 function handle_admin(string $path): void
 {
     header('Cache-Control: no-store');
     $section = trim(substr($path, strlen('/admin')), '/') ?: 'dashboard';
     if ($section === 'login') { admin_login_page(); return; }
     $user = require_login();
-    if (!in_array($section, ['dashboard','logout','requests','appointments','content','editor','media','gallery','seo','settings','users','jobs','audit','backup','mail','languages','themes','licenses'], true)) { http_response_code(404); admin_layout('Bulunamadı','dashboard',$user,'<div class="panel">Bu sayfa bulunamadı.</div>'); return; }
+    if (!in_array($section, ['dashboard','logout','requests','appointments','content','editor','media','gallery','seo','settings','integrations','users','jobs','audit','backup','mail','languages','themes','licenses'], true)) { http_response_code(404); admin_layout('Bulunamadı','dashboard',$user,'<div class="panel">Bu sayfa bulunamadı.</div>'); return; }
     require_role(admin_roles($section));
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         csrf_verify();
@@ -220,7 +226,7 @@ function handle_admin(string $path): void
         redirect($destination);
     }
     if ($section === 'logout') { http_response_code(405); header('Allow: POST'); return; }
-    $titles=['dashboard'=>'Genel bakış','requests'=>'Teklif talepleri','appointments'=>'Randevu takvimi','content'=>'İçerik stüdyosu','editor'=>'Dil editörü','media'=>'Görsel kütüphanesi','gallery'=>'Galeri','seo'=>'SEO merkezi','settings'=>'İşletme ve entegrasyonlar','users'=>'Kullanıcılar','jobs'=>'Yapay zekâ işleri','audit'=>'İşlem kayıtları','backup'=>'Yedekleme','mail'=>'E-posta kuyruğu','languages'=>'Dil paketleri','themes'=>'Tema kütüphanesi','licenses'=>'Lisans'];
+    $titles=['dashboard'=>'Genel bakış','requests'=>'Teklif talepleri','appointments'=>'Randevu takvimi','content'=>'İçerik stüdyosu','editor'=>'Dil editörü','media'=>'Görsel kütüphanesi','gallery'=>'Galeri','seo'=>'SEO merkezi','settings'=>'İşletme ve entegrasyonlar','integrations'=>'Entegrasyon merkezi','users'=>'Kullanıcılar','jobs'=>'Yapay zekâ işleri','audit'=>'İşlem kayıtları','backup'=>'Yedekleme','mail'=>'E-posta kuyruğu','languages'=>'Dil paketleri','themes'=>'Tema kütüphanesi','licenses'=>'Lisans'];
     ob_start();
     match($section) {
         'requests','appointments' => admin_requests_page($section),
@@ -333,6 +339,10 @@ function admin_post(string $section, array $user): void
         }
         foreach ($keys as $key) save_setting($key,admin_input($key,1000));
         audit('settings.updated','İşletme ve entegrasyon bilgileri'); flash('success','Ayarlar kaydedildi. Gizli anahtarlar sunucu ortamından okunur.'); return;
+    }
+    if ($section === 'integrations' && $action === 'integrations') {
+        foreach (['smtp_host','smtp_port','smtp_user','sms_provider','sms_sender','whatsapp_provider','notification_email_enabled','notification_sms_enabled','notification_whatsapp_enabled'] as $key) save_setting($key,admin_input($key,1000));
+        audit('integrations.updated','Bildirim ve entegrasyon ayarları'); flash('success','Entegrasyon ayarları kaydedildi. Gizli anahtarlar sunucu ortamından okunur.'); return;
     }
     if ($section === 'seo' && $action === 'homepage') {
         $lang=admin_lang(); foreach(['homepage_title'=>180,'homepage_intro'=>1000,'homepage_seo_title'=>180,'homepage_seo_description'=>400,'legal_controller'=>5000,'legal_processing'=>10000,'legal_rights'=>5000] as $field=>$limit) save_setting($field.'_'.$lang,admin_input($field,$limit));
