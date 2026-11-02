@@ -45,13 +45,15 @@ Bu görev zaten yalıtılmıştır. Mevcut checkout'u kullanın; kullanıcı öz
 
 Sunucuda `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` sağlayın. Parola dışındaki alanlar yönetim panelinde de ayarlanabilir; ortam değişkenleri önceliklidir. Uzak SMTP için doğrulanmış STARTTLS veya 465/TLS zorunludur. Şifresiz yerel relay yalnız `SMTP_ALLOW_INSECURE_LOCAL=1` ile loopback üzerinde kullanılabilir. Gönderimler UTF-8 düz metindir.
 
+SMS/WhatsApp için `.env.example` içindeki sağlayıcı değişkenlerini sunucu ortamına ekleyin ve Yönetim > Entegrasyonlar bölümünden sağlayıcıyı seçin. NetGSM, iletiMerkezi, Twilio SMS/WhatsApp ve Meta WhatsApp Cloud API kuyruk işçisiyle gönderilir. Anahtarlar eksikse bildirim `failed` olarak kaydedilir; canlı gönderim yapılmaz.
+
 ```sh
 php bin/worker.php all  # veya ai / mail / notifications; tek sefer, sınırlı iş grubu
 ```
 
 Üretimde süreç yöneticisi veya zamanlayıcıyla her dakika çalıştırın. Aynı anda çalışan işçiler işi atomik sahiplenir. Kesilen işlerin 10 dakikalık kilidi kurtarılır. Otomatik sınırsız tekrar yoktur; başarısız işleri panelden inceleyin.
 
-Bulut ağında `api.openai.com` için HTTPS izni ve API anahtarı, SMTP için sağlayıcının alan adı/portuna desteklenen TCP erişimi gerekir. Ortamın proxy/TLS ayarlarını koruyun. SMTP TCP erişimi HTTPS alan adı izniyle sağlanmış sayılmaz. Gerçek API/SMTP bilgileri henüz sağlanmadığından dış sağlayıcılar bu kurulumda canlı doğrulanmadı. Yerel SMTP ve hata koruma akışları test edildi. IMAP gelen kutusu ve otomatik WhatsApp entegrasyonu bu sürümde yoktur; WhatsApp bağlantısı gerçek numara girildiğinde görünür.
+Bulut ağında `api.openai.com` için HTTPS izni ve API anahtarı, SMTP/SMS/WhatsApp için sağlayıcının alan adı/portuna desteklenen HTTPS erişimi gerekir. Ortamın proxy/TLS ayarlarını koruyun. Gerçek sağlayıcı bilgileri sağlanmadığından canlı gönderim bu pakette denenmez; test ve hata koruma akışları yerel olarak doğrulanır.
 
 ## Yayın ve SEO
 
