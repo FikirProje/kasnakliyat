@@ -14,6 +14,9 @@ PUBLIC_SITE = (ROOT / "src" / "PublicSite.php").read_text(encoding="utf-8")
 assert "kullanim-sartlari" in PUBLIC_SITE and "destek-sla" in PUBLIC_SITE, "legal routes missing"
 ADMIN = (ROOT / "src" / "Admin.php").read_text(encoding="utf-8")
 assert "admin_legal_page" in ADMIN and "legal_terms_" in ADMIN and "legal_sla_" in ADMIN, "admin legal editor missing"
+INBOUND = (ROOT / "src" / "InboundMail.php").read_text(encoding="utf-8")
+WORKER = (ROOT / "bin" / "worker.php").read_text(encoding="utf-8")
+assert "purge_inbound_mail" in INBOUND and "IMAP_RETENTION_DAYS" in INBOUND and "purge_inbound_mail" in WORKER, "IMAP retention policy missing"
 
 assert ARCHIVE.is_file(), f"missing archive: {ARCHIVE}"
 with zipfile.ZipFile(ARCHIVE) as archive:

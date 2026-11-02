@@ -22,6 +22,7 @@ try {
     }
     if (in_array($mode, ['all','inbox'], true)) {
         $result['inbox'] = process_inbound_mail(20);
+        $result['inbox']['purged'] = purge_inbound_mail();
     }
     echo json_encode($result, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR) . PHP_EOL;
     $failures = (int) ($result['ai']['failed'] ?? 0) + (int) ($result['mail']['failed'] ?? 0) + (int) ($result['notifications']['failed'] ?? 0);

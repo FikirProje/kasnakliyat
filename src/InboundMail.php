@@ -61,6 +61,14 @@ function process_inbound_mail(int $limit = 20): array
     } finally { imap_close($connection); }
 }
 
+function purge_inbound_mail(int $retentionDays = 0): int
+{
+    $days = $retentionDays > 0 ? $retentionDays : (int)envv('IMAP_RETENTION_DAYS', '0');
+    if ($days < 1 || $days > 3650) return 0;
+    $cutoff = (new DateTimeImmutable('now', new DateTimeZone('UTC')))->modify('-'.$days.' days')->format('Y-m-d H:i:s');
+    return query('DELETE FROM inbound_messages WHERE received_at < ?', [$cutoff])->rowCount();
+}
+
 function inbound_mail_header(string $headers, string $name): string
 {
     if (!preg_match('/^'.preg_quote($name, '/').':\s*(.+(?:\R[ \t].+)*)$/mi', $headers, $match)) return '';
