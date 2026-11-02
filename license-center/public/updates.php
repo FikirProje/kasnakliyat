@@ -62,7 +62,7 @@ try {
         $requestedVersion=(string)($input['version']??'');
         $release=update_one("SELECT r.* FROM application_releases r JOIN products p ON p.id=r.product_id WHERE p.slug=? AND p.status='published' AND r.channel='stable' AND r.status='published' AND r.version=?",[$product,$requestedVersion]);
         if(!$release||!is_file($release['package_path'])) throw new RuntimeException('Requested release is unavailable.');
-        update_query('INSERT INTO update_events(installation_id,license_id,from_version,to_version,action,detail) VALUES(?,?,?,?,?,?)',[$existing['id'],$licenseId,$installed,$release['version'],'download',$domain]);
+        update_query('INSERT INTO update_events(installation_id,license_id,from_version,to_version,action,detail) VALUES(?,?,?,?,?,?)',[$existing['id'],$licenseId,$installed,$release['version'],'downloaded',$domain]);
         header('Content-Type: application/zip'); header('Content-Length: '.filesize($release['package_path'])); header('Content-Disposition: attachment; filename="'.basename($release['package_name']).'"'); header('X-TofiDesk-SHA256: '.$release['sha256']); readfile($release['package_path']); exit;
     }
     update_query('INSERT INTO update_events(installation_id,license_id,from_version,action,detail) VALUES(?,?,?,?,?)',[$existing['id'],$licenseId,$installed,'check',$domain]);
