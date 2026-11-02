@@ -339,7 +339,7 @@ function admin_post(string $section, array $user): void
         save_setting('license_server_url',rtrim($server,'/')); save_setting('license_key',$key); $result=license_check_remote(); audit('license.checked',license_domain()); flash($result['active']?'success':'error',$result['message']); return;
     }
     if ($section === 'settings' && $action === 'settings') {
-        $keys=['business_name','country_code','currency_code','timezone','location_label','contact_phone','contact_email','whatsapp','address','site_description','theme_primary','theme_accent','theme_custom_css','facebook_url','instagram_url','linkedin_url','youtube_url','pinterest_url','pinterest_verify','google_site_verification','analytics_id','ai_provider','ai_model','mail_from','smtp_host','smtp_port','smtp_user','mail_subject_request','mail_subject_appointment','mail_subject_verification'];
+        $keys=['business_name','country_code','currency_code','timezone','location_label','contact_phone','contact_email','whatsapp','address','site_description','theme_primary','theme_accent','theme_custom_css','facebook_url','instagram_url','linkedin_url','youtube_url','pinterest_url','pinterest_verify','google_site_verification','analytics_id','ai_provider','ai_model','mail_from','smtp_host','smtp_port','smtp_user','mail_subject_request','mail_subject_appointment','mail_subject_verification','mail_body_request','mail_body_appointment'];
         foreach ($keys as $key) {
             $value=admin_input($key,1000);
             if (in_array($key,['contact_email','mail_from'],true) && $value !== '' && !filter_var($value,FILTER_VALIDATE_EMAIL)) throw new InvalidArgumentException('E-posta adresini kontrol edin.');

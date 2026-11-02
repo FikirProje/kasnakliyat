@@ -105,7 +105,9 @@ function public_request(string $lang, string $kind): array {
     if ($mediaId) { $q=db()->prepare('INSERT INTO request_media(request_id,media_id) VALUES(?,?)'); $q->execute([$requestId,$mediaId]); }
     if (filter_var(setting('contact_email'),FILTER_VALIDATE_EMAIL)) {
         $subject=$kind==='quote'?setting('mail_subject_request','Yeni teklif talebi'):setting('mail_subject_appointment','Yeni randevu talebi');
-        enqueue_mail(setting('contact_email'),$subject.' · '.$reference,'Yeni '.($kind==='quote'?'teklif':'randevu').' talebi. Ayrıntılar yönetim panelindedir. Referans: '.$reference,$requestId);
+        $template=$kind==='quote'?setting('mail_body_request','Yeni {type} talebi alındı. Referans: {reference}. Ayrıntılar yönetim panelindedir.'):setting('mail_body_appointment','Yeni {type} talebi alındı. Referans: {reference}. Ayrıntılar yönetim panelindedir.');
+        $body=strtr($template,['{reference}'=>$reference,'{type}'=>$kind==='quote'?'teklif':'randevu']);
+        enqueue_mail(setting('contact_email'),$subject.' · '.$reference,$body,$requestId);
     }
     audit('request.created',$reference);
     flash('success',t('request_received',$lang).' '.t('request_reference',$lang).': '.$reference.' '.t('request_pending',$lang));
