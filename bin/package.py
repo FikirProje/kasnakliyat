@@ -33,7 +33,7 @@ marketplace_excluded = {
     "config/site.php", "bin/package.py",
 }
 if args.profile == "marketplace":
-    files = [path for path in files if str(path.relative_to(ROOT)) not in marketplace_excluded]
+    files = [path for path in files if path.relative_to(ROOT).as_posix() not in marketplace_excluded]
 
 GENERIC_LOGO = b'''<svg xmlns="http://www.w3.org/2000/svg" width="430" height="80" viewBox="0 0 430 80" role="img"><rect width="64" height="64" x="4" y="8" rx="17" fill="#0D2E42"/><path d="M16 46h40V31H25a9 9 0 0 0-9 9z" fill="#fff"/><circle cx="30" cy="50" r="6" fill="#FF9149"/><circle cx="52" cy="50" r="6" fill="#FF9149"/><text x="87" y="45" fill="#0D2E42" font-family="system-ui,sans-serif" font-size="30" font-weight="800">TRANSPORT CMS</text><text x="89" y="64" fill="#58716e" font-family="system-ui,sans-serif" font-size="10" font-weight="600" letter-spacing="3">YOUR BUSINESS NAME</text></svg>'''
 GENERIC_LOGO_LIGHT = GENERIC_LOGO.replace(b'fill="#0D2E42" font-family', b'fill="#fff" font-family').replace(b'fill="#58716e"', b'fill="#c9d8d3"')
@@ -43,6 +43,10 @@ GENERIC_REPLACEMENTS = (
     ("KAŞ NAKLİYAT", "TRANSPORT CMS"), ("Kaş Nakliyat", "Transport CMS"),
     ("kasnakliyat.com", "example-transport.test"), ("bilgi@kasnakliyat.com", "hello@example-transport.test"),
     ("info@kasnakliyat.com", "admin@example-transport.test"), ("+90 505 219 43 46", "+1 555 010 0100"),
+    ("kasnakliyat.local", "transport-cms.local"),
+    ("kasnakliyat", "transport-cms"),
+    ("Bayındır", "Your district"), ("505 219", "555 010"),
+    ("bilgi@kas", "contact@example-transport.test"),
     ("+905052194346", "15550100100"), ("Bayındır Mh. Ağalar Sk. No:25 Kaş / Antalya", "Your business address"),
     ("KAŞ / ANTALYA", "YOUR CITY / YOUR COUNTRY"), ("Kaş / Antalya", "Your City / Your Country"),
     ("Kaş", "Your City"), ("KAŞ", "YOUR CITY"),
@@ -62,7 +66,8 @@ def release_bytes(path: Path) -> bytes:
 args.output.parent.mkdir(parents=True, exist_ok=True)
 with zipfile.ZipFile(args.output, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
     for path in sorted(files):
-        info = zipfile.ZipInfo.from_file(path, str(path.relative_to(ROOT)))
+        archive_name = path.relative_to(ROOT).as_posix()
+        info = zipfile.ZipInfo.from_file(path, archive_name)
         # Upload archives should be readable by the web server even if the
         # development workspace uses owner-only source-file permissions.
         mode = 0o755 if path.stat().st_mode & stat.S_IXUSR else 0o644
@@ -77,10 +82,13 @@ with zipfile.ZipFile(args.output, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as
         archive.writestr("config/site.php", b"<?php\nreturn [];\n", compress_type=zipfile.ZIP_DEFLATED)
 with zipfile.ZipFile(args.output) as archive:
     assert archive.testzip() is None
-    for name in archive.namelist():
+    names = archive.namelist()
+    assert len(names) == len(set(names)), "release archive contains duplicate paths"
+    for name in names:
         assert name != ".env" and not name.endswith((".sqlite", ".sqlite-wal", ".sqlite-shm"))
         assert not name.startswith((".git/", "storage/sessions/", "storage/backups/", "storage/media/"))
         if args.profile == "marketplace" and Path(name).suffix.lower() in TEXT_SUFFIXES:
             text = archive.read(name).decode("utf-8", "ignore")
-            assert "Kaş Nakliyat" not in text and "kasnakliyat.com" not in text and "Bayındır Mh." not in text
+            forbidden = ("Kaş Nakliyat", "kasnakliyat.com", "kasnakliyat.local", "Bayındır Mh.", "505 219", "bilgi@kas")
+            assert not any(value in text for value in forbidden), f"customer identifier remains in {name}"
 print(f"Deployment ZIP: {args.output} ({args.output.stat().st_size:,} bytes; {len(files)} files)")
