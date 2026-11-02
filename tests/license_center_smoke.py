@@ -20,7 +20,8 @@ for metric in ["orders", "revenue", "downloads", "webhook_errors"]:
     assert metric in INDEX, f"sales dashboard metric missing: {metric}"
 for feature in ["theme_versions", "changelog", "preview_url", "price_minor", "license_type", "/theme-preview", "/theme-versions"]:
     assert feature in INDEX, f"theme sales feature missing: {feature}"
-for route in ["/shop", "/pricing", "/account/register", "/account/forgot-password", "/orders", "/themes"]:
+for route in ["/shop", "/pricing", "/account/register", "/account/forgot-password", "/account/profile", "/account/security", "/account/support", "/orders", "/themes"]:
     assert f"$path==='{route}'" in INDEX, f"route missing: {route}"
+assert "UPDATE buyers SET name=?,locale=?" in INDEX, "buyer locale preference is not persisted"
 
 print("PASS license-center tokenless installer, locale, buyer security and route coverage")
