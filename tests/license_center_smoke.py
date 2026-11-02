@@ -3,6 +3,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 INDEX = (ROOT / "license-center" / "public" / "index.php").read_text(encoding="utf-8")
 INSTALLER = (ROOT / "license-center" / "public" / "installer.php").read_text(encoding="utf-8")
+INSTALLER_FALLBACK = ROOT / "license-center" / "installer.php"
 ACCOUNT_ROUTES = (ROOT / "license-center" / "public" / "account_routes.php").read_text(encoding="utf-8")
 ENV = (ROOT / "license-center" / ".env.example").read_text(encoding="utf-8")
 
@@ -10,6 +11,7 @@ locales = ["tr", "en", "de", "fr", "es", "it", "pt", "ru", "ar", "fa", "nl", "zh
 assert all(f"'{locale}'" in INDEX for locale in locales), "locale coverage missing"
 assert "LICENSE_INSTALL_TOKEN" not in ENV, "obsolete installer token remains"
 assert "Tokenless first setup" in INSTALLER, "tokenless installer copy missing"
+assert INSTALLER_FALLBACK.is_file(), "license centre rewrite-independent installer missing"
 assert 'onchange="if(this.value)location.href=this.value"' in INSTALLER and 'class="sr-only"' in INSTALLER, "installer locale selector missing"
 assert all(("'"+locale+"'=>'") in INSTALLER for locale in locales), "installer locale names missing"
 assert "buyer_session_epoch" in INDEX, "buyer session revocation missing"
