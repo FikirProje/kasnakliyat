@@ -14,7 +14,8 @@ TOFIDESK — SUNUCUYA YÜKLEME
    APP_ENV=production
    Kurulum tokensızdır; ilk yönetici oluşturulduktan sonra /install otomatik kapanır.
 
-4. /install adresini açın. Sunucu kontrollerini tamamlayın, kurulum dilini,
+4. /install adresini açın. Rewrite kapalıysa /install.php adresini kullanın.
+   Sunucu kontrollerini tamamlayın, kurulum dilini,
    ülke/işletme bilgilerini ve ilk yönetici parolasını girin. Yönetim paneli:
    /admin/login
 
