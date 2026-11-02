@@ -21,6 +21,9 @@ function core_locales(): array
 function preferred_browser_locale(): string
 {
     $supported = array_keys(core_locales());
+    $country = strtoupper(trim((string)($_SERVER['HTTP_CF_IPCOUNTRY'] ?? $_SERVER['GEOIP_COUNTRY_CODE'] ?? '')));
+    $countryMap = ['TR'=>'tr','GB'=>'en','US'=>'en','CA'=>'en','DE'=>'de','AT'=>'de','CH'=>'de','FR'=>'fr','BE'=>'fr','ES'=>'es','MX'=>'es','AR'=>'es','IT'=>'it','PT'=>'pt','BR'=>'pt','NL'=>'nl','RU'=>'ru','AE'=>'ar','SA'=>'ar','CN'=>'zh','TW'=>'zh','JP'=>'ja','KR'=>'ko','IR'=>'fa'];
+    if (isset($countryMap[$country]) && in_array($countryMap[$country], $supported, true)) return $countryMap[$country];
     $header = strtolower((string)($_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? ''));
     foreach (explode(',', $header) as $part) {
         $code = strtolower(trim(explode(';', $part, 2)[0]));
