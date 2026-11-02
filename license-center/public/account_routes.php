@@ -17,7 +17,73 @@ function lc_preflight(): void {
     exit;
 }
 lc_preflight();
+function release_schema(): void {
+    lc_db()->exec(<<<'SQL'
+CREATE TABLE IF NOT EXISTS products(
+    id INTEGER PRIMARY KEY,
+    slug TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
+    kind TEXT NOT NULL DEFAULT 'application' CHECK(kind IN ('application','theme','addon')),
+    status TEXT NOT NULL DEFAULT 'draft' CHECK(status IN ('draft','published','archived')),
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS application_releases(
+    id INTEGER PRIMARY KEY,
+    product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    version TEXT NOT NULL,
+    channel TEXT NOT NULL DEFAULT 'stable' CHECK(channel IN ('preview','beta','stable')),
+    package_name TEXT NOT NULL,
+    package_path TEXT NOT NULL,
+    manifest_json TEXT NOT NULL,
+    sha256 TEXT NOT NULL,
+    signature TEXT NOT NULL,
+    min_php TEXT NOT NULL DEFAULT '8.2.0',
+    migration_version INTEGER NOT NULL DEFAULT 0,
+    changelog TEXT NOT NULL DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'draft' CHECK(status IN ('draft','published','revoked')),
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    published_at TEXT,
+    UNIQUE(product_id,version,channel)
+);
+CREATE TABLE IF NOT EXISTS installations(
+    id INTEGER PRIMARY KEY,
+    license_id INTEGER NOT NULL REFERENCES licenses(id) ON DELETE CASCADE,
+    installation_hash TEXT NOT NULL UNIQUE,
+    product TEXT NOT NULL,
+    domain TEXT NOT NULL,
+    installed_version TEXT NOT NULL,
+    migration_version INTEGER NOT NULL DEFAULT 0,
+    php_version TEXT NOT NULL DEFAULT '',
+    last_seen_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    grace_until TEXT,
+    status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active','review','revoked')),
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS update_events(
+    id INTEGER PRIMARY KEY,
+    installation_id INTEGER REFERENCES installations(id) ON DELETE SET NULL,
+    license_id INTEGER REFERENCES licenses(id) ON DELETE SET NULL,
+    from_version TEXT NOT NULL DEFAULT '',
+    to_version TEXT NOT NULL DEFAULT '',
+    action TEXT NOT NULL CHECK(action IN ('check','approved','downloaded','applied','failed','rolled_back')),
+    detail TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS license_revocations(
+    id INTEGER PRIMARY KEY,
+    license_id INTEGER NOT NULL REFERENCES licenses(id) ON DELETE CASCADE,
+    reason TEXT NOT NULL,
+    effective_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    revoked_by INTEGER REFERENCES admins(id) ON DELETE SET NULL
+);
+CREATE INDEX IF NOT EXISTS releases_lookup ON application_releases(product_id,channel,status,version);
+CREATE INDEX IF NOT EXISTS installations_license ON installations(license_id,status,last_seen_at);
+CREATE INDEX IF NOT EXISTS update_events_installation ON update_events(installation_id,created_at);
+SQL);
+}
 setup();
+release_schema();
 // Pricing cards may link to /contact?plan=... for backwards compatibility;
 // route a selected plan into the authenticated checkout flow instead.
 if ($path === '/contact' && isset($_GET['plan'])) {
