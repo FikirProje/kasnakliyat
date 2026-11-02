@@ -1,10 +1,14 @@
 Options -Indexes
 DirectoryIndex index.php
 RewriteEngine On
+RewriteRule ^(?:src|config|bin|storage|docs|tests|work)(?:/|$) - [F,L]
 RewriteRule ^(?:assets|media)(/.*)?$ public/$0 [L]
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^ index.php [QSA,L]
 <FilesMatch "^\.">
+Require all denied
+</FilesMatch>
+<FilesMatch "\.(?:sqlite|sqlite-shm|sqlite-wal|log|env)$">
 Require all denied
 </FilesMatch>
