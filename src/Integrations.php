@@ -225,11 +225,8 @@ function process_ai_jobs(int $limit = 3): array
 function ai_generate_text(array $job): array
 {
     $key = (string) envv('AI_API_KEY', '');
-    if ($key === '') {
+    if ($key === '' && ai_provider_setting() === 'openai') {
         throw new RuntimeException('AI_API_KEY yapılandırılmadı. Anahtarı sunucu ortamına ekleyip işi yeniden deneyin.');
-    }
-    if (ai_provider_setting() !== 'openai') {
-        throw new RuntimeException('Bu sürümde desteklenen sağlayıcı OpenAI’dır.');
     }
     $article = row('SELECT * FROM articles WHERE id=?', [$job['article_id']]);
     if (!$article) {
@@ -277,8 +274,7 @@ function ai_generate_text(array $job): array
 function ai_translate_interface_catalog(string $code, string $language): array
 {
     $key = (string) envv('AI_API_KEY', '');
-    if ($key === '') throw new RuntimeException('AI_API_KEY yapılandırılmadı. Otomatik çeviri için anahtarı sunucu ortamına ekleyin.');
-    if (ai_provider_setting() !== 'openai') throw new RuntimeException('Bu sürümde desteklenen sağlayıcı OpenAI’dır.');
+    if ($key === '' && ai_provider_setting() === 'openai') throw new RuntimeException('AI_API_KEY yapılandırılmadı. Otomatik çeviri için anahtarı sunucu ortamına ekleyin.');
     $source = translation_catalog()['tr'];
     $system = 'You translate public website interface text. Return exactly one JSON object using every supplied key exactly once. Translate each Turkish value naturally into the requested language. Preserve company name Kaş Nakliyat, URLs, phone formatting, and placeholders. Do not add claims, services, prices, licenses or facts. Do not return Markdown or explanations.';
     $user = json_encode(['target_language' => $language, 'language_code' => $code, 'source' => $source], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
@@ -300,7 +296,7 @@ function validate_interface_catalog(mixed $dictionary): void
 
 function ai_provider_setting(): string
 {
-    return trim(setting('ai_provider', 'openai')) ?: 'openai';
+    return trim(setting('ai_provider', envv('AI_BASE_URL','') !== '' ? 'compatible' : 'openai')) ?: 'openai';
 }
 
 function ai_model_setting(): string
@@ -314,8 +310,13 @@ function ai_openai_request(string $path, string $payload, string $key, int $maxi
         throw new InvalidArgumentException('Unsupported AI operation');
     }
     $raw = '';
-    $curl = curl_init('https://api.openai.com' . $path);
-    curl_setopt_array($curl, [CURLOPT_POST => true, CURLOPT_POSTFIELDS => $payload, CURLOPT_HTTPHEADER => ['Authorization: Bearer ' . $key, 'Content-Type: application/json'], CURLOPT_CONNECTTIMEOUT => 15, CURLOPT_TIMEOUT => $path === '/v1/images/generations' ? 180 : 100, CURLOPT_SSL_VERIFYPEER => true, CURLOPT_SSL_VERIFYHOST => 2, CURLOPT_FOLLOWLOCATION => false, CURLOPT_PROTOCOLS => CURLPROTO_HTTPS, CURLOPT_WRITEFUNCTION => static function ($curl, string $chunk) use (&$raw, $maximumBytes): int {
+    $base = rtrim((string)envv('AI_BASE_URL', 'https://api.openai.com'), '/');
+    if (!filter_var($base, FILTER_VALIDATE_URL) || !in_array(strtolower((string)parse_url($base, PHP_URL_SCHEME)), ['https','http'], true)) throw new RuntimeException('AI_BASE_URL geçerli bir HTTP(S) adresi olmalı.');
+    $scheme = strtolower((string)parse_url($base, PHP_URL_SCHEME));
+    $headers = ['Content-Type: application/json'];
+    if ($key !== '') $headers[] = 'Authorization: Bearer ' . $key;
+    $curl = curl_init($base . $path);
+    curl_setopt_array($curl, [CURLOPT_POST => true, CURLOPT_POSTFIELDS => $payload, CURLOPT_HTTPHEADER => $headers, CURLOPT_CONNECTTIMEOUT => 15, CURLOPT_TIMEOUT => $path === '/v1/images/generations' ? 180 : 100, CURLOPT_SSL_VERIFYPEER => $scheme === 'https', CURLOPT_SSL_VERIFYHOST => $scheme === 'https' ? 2 : 0, CURLOPT_FOLLOWLOCATION => false, CURLOPT_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS, CURLOPT_WRITEFUNCTION => static function ($curl, string $chunk) use (&$raw, $maximumBytes): int {
         if (strlen($raw) + strlen($chunk) > $maximumBytes) {
             return 0;
         }
