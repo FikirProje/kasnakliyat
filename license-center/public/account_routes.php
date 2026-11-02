@@ -7,6 +7,16 @@ if (str_ends_with($_SERVER['SCRIPT_NAME'] ?? '', '/index.php')) {
     $base = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
     if ($base !== '' && $base !== '/' && str_starts_with($path, $base)) $path = substr($path, strlen($base)) ?: '/';
 }
+function lc_preflight(): void {
+    $missing = [];
+    if (version_compare(PHP_VERSION, '8.2.0', '<')) $missing[] = 'PHP 8.2+ (mevcut: '.PHP_VERSION.')';
+    foreach (['pdo_sqlite'=>'PDO SQLite','sqlite3'=>'SQLite3','curl'=>'cURL','openssl'=>'OpenSSL','mbstring'=>'mbstring'] as $extension=>$label) if (!extension_loaded($extension)) $missing[] = $label;
+    if (!$missing) return;
+    http_response_code(503);
+    echo '<!doctype html><html lang="tr"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TofiDesk gereksinimleri</title><style>body{font:16px/1.6 system-ui;background:#092b3d;color:#153346;margin:0;padding:28px}.card{max-width:720px;margin:8vh auto;background:#f7faf8;border-radius:18px;padding:34px}h1{color:#08283a}li{padding:10px;margin:7px 0;background:#fff;border:1px solid #dce8e3;border-radius:8px;color:#a33}</style><main class="card"><strong>TOFIDESK</strong><h1>Sunucu gereksinimleri eksik</h1><p>Plesk/cPanel PHP ayarlarından aşağıdaki gereksinimleri etkinleştirin ve sayfayı yenileyin.</p><ul>'.implode('',array_map(static fn(string $item):string=>'<li>✗ '.htmlspecialchars($item,ENT_QUOTES,'UTF-8').'</li>',$missing)).'</ul><p>PHP 8.2+ · PDO SQLite · SQLite3 · cURL · OpenSSL · mbstring</p></main></html>';
+    exit;
+}
+lc_preflight();
 setup();
 // Keep plan entitlements enforced server-side even when a payment callback
 // creates the licence directly.
