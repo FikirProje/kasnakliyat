@@ -53,6 +53,11 @@ try {
     echo '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TofiDesk kurulum tanılama</title><style>body{font:16px/1.6 system-ui;background:#092b3d;color:#153346;margin:0;padding:28px}.card{max-width:780px;margin:8vh auto;background:#f7faf8;border-radius:18px;padding:34px}h1{color:#08283a}code{display:block;background:#edf3f0;padding:14px;border-radius:8px;white-space:pre-wrap;overflow-wrap:anywhere;color:#7a241b}</style><main class="card"><strong>TOFIDESK</strong><h1>Kurulum tanılaması gerekli</h1><p>PHP sürümü uygun, ancak uygulama başlangıcında veritabanı veya dosya sistemi hatası oluştu. Plesk hata günlüğündeki kayıtla karşılaştırın.</p><code>'.$detail.'</code><p>Kontrol: <b>storage</b> yazma izni, SQLite/PDO SQLite uzantıları ve httpdocs içindeki dosya bütünlüğü.</p></main>';
     exit;
 }
+// A hosting restore may preserve the migration marker while losing this small
+// settings table. Repair it before any public/admin setting lookup.
+if (row("SELECT name FROM sqlite_master WHERE type='table' AND name='migrations'")) {
+    db()->exec('CREATE TABLE IF NOT EXISTS settings(key TEXT PRIMARY KEY,value TEXT NOT NULL)');
+}
 try {
     if (rtrim($path, '/') === '/install' && function_exists('handle_install')) { handle_install(); exit; }
     if (!row("SELECT name FROM sqlite_master WHERE type='table' AND name='migrations'")) render_error(503, 'Uygulama kurulumu tamamlanmadı.');
