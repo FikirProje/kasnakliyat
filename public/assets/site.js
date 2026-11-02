@@ -1,4 +1,9 @@
 'use strict';
+document.querySelectorAll('.language-list a[lang]').forEach((link) => {
+  link.addEventListener('click', () => {
+    document.cookie = 'tofidesk_locale=' + encodeURIComponent(link.lang) + '; Max-Age=31536000; Path=/; SameSite=Lax' + (location.protocol === 'https:' ? '; Secure' : '');
+  });
+});
 const toggle = document.querySelector('.menu-toggle');
 const navigation = document.querySelector('#navigation');
 if (toggle && navigation) {
