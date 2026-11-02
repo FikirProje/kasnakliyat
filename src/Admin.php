@@ -421,9 +421,16 @@ function admin_login_page(): void
     ?><!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Yönetim girişi · Kaş Nakliyat</title><link rel="stylesheet" href="/assets/admin.css"></head><body class="login-body"><main class="login-card"><a class="brand" href="/tr/">KAŞ<span>NAKLİYAT</span></a><p class="eyebrow">YÖNETİM MERKEZİ</p><h1>Yeniden merhaba.</h1><p>İçeriğinizi, taleplerinizi ve çalışma takviminizi tek yerden yönetin.</p><?php if($error): ?><p class="notice error" role="alert"><?= e($error) ?></p><?php endif ?><?php foreach(take_flash() as $notice): ?><p class="notice <?= e($notice['kind']) ?>" role="status"><?= e($notice['message']) ?></p><?php endforeach ?><form method="post"><?= csrf_field() ?><label>E-posta<input type="email" name="email" autocomplete="username" required></label><label>Parola<input type="password" name="password" autocomplete="current-password" required></label><label>Doğrulama kodu <small>(etkinse)</small><input name="totp" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code"></label><button type="submit">Güvenli giriş yap <span>↗</span></button></form><p class="muted small">İlk yönetici hesabı sunucu komutuyla oluşturulur. Varsayılan parola bulunmaz.</p><a class="text-link" href="/tr/">← Web sitesine dön</a></main><aside class="login-art"><div class="route-orbit"></div><p>Her taşımada<br>iyi bir başlangıç.</p><span>KAŞ · AKDENİZ</span></aside></body></html><?php
 }
 
+function admin_date_label(string $lang): string
+{
+    $formats=['tr'=>'d.m.Y','en'=>'d/m/Y','de'=>'d.m.Y','fr'=>'d/m/Y','es'=>'d/m/Y','it'=>'d/m/Y','pt'=>'d/m/Y','nl'=>'d-m-Y','ru'=>'d.m.Y','ar'=>'d/m/Y','zh'=>'Y-m-d','ja'=>'Y/m/d','ko'=>'Y. m. d.','fa'=>'Y/m/d'];
+    return (new DateTimeImmutable('now',new DateTimeZone(setting('timezone','Europe/Istanbul'))))->format($formats[$lang]??'Y-m-d');
+}
+
 function admin_layout(string $title,string $section,array $user,string $body): void
 {
     $lang = admin_user_lang($user);
+    ob_start(static function(string $html) use ($lang): string { return str_replace(date('d.m.Y'),admin_date_label($lang),$html); });
     $direction = locale_direction($lang);
     $nav=['dashboard'=>['◫','Genel bakış'],'requests'=>['↗','Teklif talepleri'],'appointments'=>['▦','Randevular'],'content'=>['▤','İçerik stüdyosu'],'languages'=>['文','Dil paketleri'],'themes'=>['◐','Tema kütüphanesi'],'licenses'=>['◇','Lisans'],'jobs'=>['✧','Yapay zekâ işleri'],'media'=>['▧','Görsel kütüphanesi'],'gallery'=>['▦','Galeri'],'seo'=>['◎','SEO merkezi'],'mail'=>['✉','E-posta kuyruğu'],'settings'=>['⚙','Ayarlar'],'email-templates'=>['✉','E-posta şablonları'],'notification-rules'=>['♧','Bildirim kuralları'],'integrations'=>['⚡','Entegrasyonlar'],'security'=>['🔒','Hesap güvenliği'],'users'=>['♙','Kullanıcılar'],'backup'=>['↓','Yedekleme'],'audit'=>['≡','İşlem kayıtları']];
     $nav['legal']=['§',admin_section_title('legal',$lang)];
