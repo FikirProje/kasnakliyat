@@ -127,7 +127,10 @@ class Smoke:
 
     def stop(self):
         if self.server:
-            self.server.terminate()
+            if os.name == "nt":
+                subprocess.run(["taskkill", "/PID", str(self.server.pid), "/T", "/F"], capture_output=True)
+            else:
+                self.server.terminate()
             try:
                 self.server.wait(timeout=5)
             except subprocess.TimeoutExpired:
@@ -467,7 +470,7 @@ def main():
     if not Path(PHP).is_file():
         print("PHP executable missing. Set PHP_BIN.", file=sys.stderr)
         return 2
-    with tempfile.TemporaryDirectory(prefix="kasnakliyat-smoke-") as directory:
+    with tempfile.TemporaryDirectory(prefix="kasnakliyat-smoke-", ignore_cleanup_errors=True) as directory:
         runner = Smoke(directory)
         try:
             runner.start()

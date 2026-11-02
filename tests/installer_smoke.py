@@ -5,7 +5,7 @@ from smoke import Smoke, Browser
 
 
 def main():
-    with tempfile.TemporaryDirectory(prefix="tofidesk-installer-") as directory:
+    with tempfile.TemporaryDirectory(prefix="tofidesk-installer-", ignore_cleanup_errors=True) as directory:
         runner = Smoke(directory)
         try:
             runner.start(provision_users=False)
