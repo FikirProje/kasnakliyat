@@ -355,6 +355,7 @@ function admin_post(string $section, array $user): void
     if ($section === 'settings' && $action === 'settings') {
         $keys=['business_name','country_code','currency_code','timezone','location_label','contact_phone','contact_email','whatsapp','address','site_description','logo_url','favicon_url','pwa_name','pwa_description','theme_primary','theme_accent','theme_custom_css','facebook_url','instagram_url','linkedin_url','youtube_url','pinterest_url','pinterest_verify','google_site_verification','analytics_id','ai_provider','ai_model','mail_from','smtp_host','smtp_port','smtp_user','mail_subject_request','mail_subject_appointment','mail_subject_verification','mail_body_request','mail_body_appointment','mail_body_verification'];
         foreach ($keys as $key) {
+            if (!array_key_exists($key, $_POST)) continue;
             $value=admin_input($key,1000);
             if (in_array($key,['contact_email','mail_from'],true) && $value !== '' && !filter_var($value,FILTER_VALIDATE_EMAIL)) throw new InvalidArgumentException('E-posta adresini kontrol edin.');
             if (in_array($key,['facebook_url','instagram_url','linkedin_url','youtube_url','pinterest_url'],true) && $value !== '' && (!filter_var($value,FILTER_VALIDATE_URL) || !str_starts_with(strtolower($value),'https://'))) throw new InvalidArgumentException('Sosyal medya bağlantıları HTTPS adresi olmalı.');
@@ -368,7 +369,7 @@ function admin_post(string $section, array $user): void
             if ($key==='currency_code' && $value!=='' && !preg_match('/^[A-Z]{3}$/D',$value)) throw new InvalidArgumentException('Para birimi ISO 4217 üç harf olmalı.');
             if ($key==='timezone' && $value!=='' && !in_array($value,DateTimeZone::listIdentifiers(),true)) throw new InvalidArgumentException('Geçersiz saat dilimi.');
         }
-        foreach ($keys as $key) save_setting($key,admin_input($key,1000));
+        foreach ($keys as $key) if (array_key_exists($key, $_POST)) save_setting($key,admin_input($key,1000));
         audit('settings.updated','İşletme ve entegrasyon bilgileri'); flash('success','Ayarlar kaydedildi. Gizli anahtarlar sunucu ortamından okunur.'); return;
     }
     if ($section === 'integrations' && $action === 'integrations') {
