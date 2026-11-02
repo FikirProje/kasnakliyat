@@ -8,6 +8,12 @@ ob_start(static function (string $html) use ($lang): string {
     if ($location !== '') $html = str_replace('KAŞ · ANTALYA', e($location), $html);
     $eyebrow = trim((string)setting('homepage_eyebrow_'.$lang, ''));
     if ($eyebrow !== '') $html = str_replace(e(t('hero_eyebrow', $lang)), e($eyebrow), $html);
+    $regionsTitle = trim((string)setting('homepage_regions_title_'.$lang, ''));
+    $regionsText = trim((string)setting('homepage_regions_text_'.$lang, ''));
+    $processTitle = trim((string)setting('homepage_process_title_'.$lang, ''));
+    if ($regionsTitle !== '') $html = str_replace(e(t('regions_title', $lang)), e($regionsTitle), $html);
+    if ($regionsText !== '') $html = str_replace(e(t('regions_text', $lang)), e($regionsText), $html);
+    if ($processTitle !== '') $html = str_replace(e(t('process_title', $lang)), e($processTitle), $html);
     $logo = trim((string)setting('logo_url', ''));
     if ($logo !== '' && filter_var($logo, FILTER_VALIDATE_URL)) {
         $html = str_replace(['/assets/logo.svg', '/assets/logo-light.svg'], [e($logo), e($logo)], $html);
