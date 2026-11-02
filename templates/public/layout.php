@@ -52,6 +52,7 @@ if($page!=='home' && $page!=='404') {
     $schema=['@context'=>'https://schema.org','@graph'=>[$schema,['@type'=>'BreadcrumbList','itemListElement'=>[['@type'=>'ListItem','position'=>1,'name'=>t('home_link',$lang),'item'=>base_url($root)],['@type'=>'ListItem','position'=>2,'name'=>$title,'item'=>$canonical]]]]];
 }
 ?><script type="application/ld+json"><?=json_encode($schema,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT)?></script>
+<link rel="manifest" href="/manifest.webmanifest"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="<?=e($brand)?>">
 </head>
 <body>
 <a class="skip" href="#main"><?=e(t('skip_link',$lang))?></a>

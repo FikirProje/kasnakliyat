@@ -80,3 +80,4 @@ if (galleryGrid && galleryMore) {
     finally { galleryMore.disabled = false; }
   });
 }
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
