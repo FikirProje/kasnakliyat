@@ -44,9 +44,16 @@ ob_start(static function (string $html): string {
         'ja'=>['Product'=>'製品','Pricing'=>'料金','Themes'=>'テーマ','Contact'=>'お問い合わせ','Buy now'=>'購入する','Explore themes'=>'テーマを見る'],
         'ko'=>['Product'=>'제품','Pricing'=>'가격','Themes'=>'테마','Contact'=>'문의','Buy now'=>'구매하기','Explore themes'=>'테마 보기'],
     ];
+    $protected = [];
+    $html = preg_replace_callback('#<(script|style)\b[^>]*>.*?</\1>#is', static function (array $match) use (&$protected): string {
+        $key = '__LC_PROTECTED_'.count($protected).'__';
+        $protected[$key] = $match[0];
+        return $key;
+    }, $html) ?? $html;
     foreach ($translations[$lang] ?? [] as $from => $to) {
         $html = str_replace($from, $to, $html);
     }
+    $html = strtr($html, $protected);
     $html = str_replace('</style>', '.locale-select select{font:600 12px Poppins,Arial;background:#ffffff18;color:#fff;border:1px solid #ffffff44;border-radius:8px;padding:8px 28px 8px 10px;max-width:150px}.locale-select option{color:#08283a;background:#fff}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}', $html);
     $accepted = ($_COOKIE['lc_cookie_consent'] ?? '') === 'accepted';
     if (!$accepted) {
