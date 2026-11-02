@@ -45,7 +45,7 @@ function translation_catalog(): array
 {
   "tr": {
     "nav_services": "Hizmetler",
-    "nav_process": "Nasıl çalışır?",
+    "nav_process": "Nasıl Çalışır?",
     "nav_regions": "Hizmet bölgesi",
     "nav_blog": "Rehber",
     "nav_contact": "İletişim",
