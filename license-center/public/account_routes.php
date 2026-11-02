@@ -81,6 +81,7 @@ CREATE INDEX IF NOT EXISTS releases_lookup ON application_releases(product_id,ch
 CREATE INDEX IF NOT EXISTS installations_license ON installations(license_id,status,last_seen_at);
 CREATE INDEX IF NOT EXISTS update_events_installation ON update_events(installation_id,created_at);
 SQL);
+    try { lc_db()->exec("ALTER TABLE license_revocations ADD COLUMN expires_at TEXT"); } catch (Throwable $e) { }
 }
 setup();
 release_schema();
