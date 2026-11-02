@@ -8,6 +8,9 @@ if (str_ends_with($_SERVER['SCRIPT_NAME'] ?? '', '/index.php')) {
     if ($base !== '' && $base !== '/' && str_starts_with($path, $base)) $path = substr($path, strlen($base)) ?: '/';
 }
 setup();
+// Keep plan entitlements enforced server-side even when a payment callback
+// creates the licence directly.
+lc_db()->exec("CREATE TRIGGER IF NOT EXISTS license_plan_domain_limit AFTER INSERT ON licenses BEGIN UPDATE licenses SET domain_limit=CASE WHEN product LIKE '%Agency%' THEN 10 WHEN product LIKE '%Studio%' THEN 3 ELSE 1 END WHERE id=NEW.id; END");
 $sessionPath = dirname(lc_env('LICENSE_DB_PATH', LC_ROOT.'/storage/licenses.sqlite')).'/sessions';
 if (!is_dir($sessionPath)) mkdir($sessionPath, 0700, true);
 session_save_path($sessionPath);
