@@ -155,12 +155,27 @@ function migrate_moving_service(): void {
 }
 
 function migrate_inbound_mail(): void {
-    if (row('SELECT version FROM migrations WHERE version=9')) return;
+    if (row('SELECT version FROM migrations WHERE version=9')) { migrate_themes(); return; }
     db()->beginTransaction();
     try {
         db()->exec("CREATE TABLE inbound_messages(id INTEGER PRIMARY KEY,uidvalidity TEXT NOT NULL,uid TEXT NOT NULL,message_id TEXT NOT NULL DEFAULT '',request_id INTEGER REFERENCES requests(id) ON DELETE SET NULL,sender TEXT NOT NULL,subject TEXT NOT NULL,body TEXT NOT NULL,received_at TEXT NOT NULL,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,UNIQUE(uidvalidity,uid))");
         db()->exec('CREATE INDEX inbound_messages_request ON inbound_messages(request_id,received_at DESC)');
         query("INSERT INTO migrations(version,applied_at) VALUES(9,datetime('now'))");
+        db()->commit();
+    } catch (Throwable $error) { if (db()->inTransaction()) db()->rollBack(); throw $error; }
+    migrate_themes();
+}
+
+function migrate_themes(): void {
+    if (row('SELECT version FROM migrations WHERE version=10')) {
+        query("UPDATE themes SET locale='global' WHERE name='Default Transport' AND locale='en' AND NOT EXISTS(SELECT 1 FROM themes WHERE locale='global')");
+        return;
+    }
+    db()->beginTransaction();
+    try {
+        db()->exec("CREATE TABLE themes(id INTEGER PRIMARY KEY,name TEXT NOT NULL UNIQUE,locale TEXT NOT NULL DEFAULT 'en',primary_color TEXT NOT NULL,accent_color TEXT NOT NULL,custom_css TEXT NOT NULL DEFAULT '',status TEXT NOT NULL DEFAULT 'draft' CHECK(status IN ('draft','published')),is_active INTEGER NOT NULL DEFAULT 0 CHECK(is_active IN (0,1)),created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)");
+        query("INSERT INTO themes(name,locale,primary_color,accent_color,custom_css,status,is_active) VALUES('Default Transport','global','#0D2E42','#FF9149','','published',1)");
+        query("INSERT INTO migrations(version,applied_at) VALUES(10,datetime('now'))");
         db()->commit();
     } catch (Throwable $error) { if (db()->inTransaction()) db()->rollBack(); throw $error; }
 }

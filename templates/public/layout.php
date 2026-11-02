@@ -2,7 +2,7 @@
 <html lang="<?=e($lang)?>" dir="<?=e(locale_direction($lang))?>">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<?php $brand=setting('business_name','Kaş Nakliyat'); ?><title><?=e($title)?> · <?=e($brand)?></title><meta name="description" content="<?=e($description)?>">
+<?php $brand=setting('business_name','Kaş Nakliyat'); $activeTheme=row("SELECT * FROM themes WHERE is_active=1 AND status='published' AND locale=? LIMIT 1",[$lang]) ?: row("SELECT * FROM themes WHERE is_active=1 AND status='published' AND locale='global' LIMIT 1") ?: []; ?><title><?=e($title)?> · <?=e($brand)?></title><meta name="description" content="<?=e($description)?>">
 <meta name="theme-color" content="#0D2E42"><meta name="robots" content="<?=($page==='404' || envv('APP_ENV','development')!=='production')?'noindex,nofollow':'index,follow'?>">
 <link rel="canonical" href="<?=e($canonical)?>">
 <?php foreach($alternates as $code=>$url):?><link rel="alternate" hreflang="<?=e($code)?>" href="<?=e(base_url($url))?>"><?php endforeach?>
@@ -11,7 +11,7 @@
 <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="<?=e($title)?>"><meta name="twitter:description" content="<?=e($description)?>"><meta name="twitter:image" content="<?=e($ogImage)?>">
 <?php if(setting('pinterest_verify')):?><meta name="p:domain_verify" content="<?=e(setting('pinterest_verify'))?>"><?php endif?><?php if(setting('google_site_verification')):?><meta name="google-site-verification" content="<?=e(setting('google_site_verification'))?>"><?php endif?>
 <?php if(envv('BING_SITE_VERIFICATION')):?><meta name="msvalidate.01" content="<?=e(envv('BING_SITE_VERIFICATION'))?>"><?php endif?><?php if(envv('YANDEX_VERIFICATION')):?><meta name="yandex-verification" content="<?=e(envv('YANDEX_VERIFICATION'))?>"><?php endif?><?php if(envv('FACEBOOK_DOMAIN_VERIFICATION')):?><meta name="facebook-domain-verification" content="<?=e(envv('FACEBOOK_DOMAIN_VERIFICATION'))?>"><?php endif?>
-<link rel="icon" href="/assets/brand.svg" type="image/svg+xml"><link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png"><link rel="stylesheet" href="/assets/site.css"><style nonce="<?=e(csp_nonce())?>">:root{--navy:<?=e(setting('theme_primary','#0D2E42'))?>;--orange:<?=e(setting('theme_accent','#FF9149'))?>}<?=setting('theme_custom_css')?></style><script src="/assets/site.js" defer></script>
+<link rel="icon" href="/assets/brand.svg" type="image/svg+xml"><link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png"><link rel="stylesheet" href="/assets/site.css"><style nonce="<?=e(csp_nonce())?>">:root{--navy:<?=e($activeTheme['primary_color']??setting('theme_primary','#0D2E42'))?>;--orange:<?=e($activeTheme['accent_color']??setting('theme_accent','#FF9149'))?>}<?=($activeTheme['custom_css']??setting('theme_custom_css'))?></style><script src="/assets/site.js" defer></script>
 <?php
 $schema=['@context'=>'https://schema.org','@type'=>'WebPage','name'=>$title,'description'=>$description,'url'=>$canonical,'inLanguage'=>$lang];
 if($page==='home') $schema=['@context'=>'https://schema.org','@graph'=>[['@type'=>'Organization','@id'=>base_url('/').'#organization','name'=>$brand,'url'=>base_url('/'),'logo'=>base_url('/assets/brand.svg')],['@type'=>'WebSite','name'=>$brand,'url'=>base_url('/'),'inLanguage'=>array_keys(locales())]]];
