@@ -453,6 +453,8 @@ function admin_layout(string $title,string $section,array $user,string $body): v
 {
     $lang = admin_user_lang($user);
     ob_start(static function(string $html) use ($lang): string {
+        $brand = trim((string)setting('business_name','Kaş Nakliyat'));
+        if ($brand !== '') $html = str_replace(['Kaş Nakliyat','KAŞ NAKLİYAT'], [e($brand), e($brand)], $html);
         $html = str_replace(['Randevular','SEO merkezi',date('d.m.Y')],['Randevu Takvimi','SEO ve Ana Sayfa',admin_date_label($lang)],$html);
         return preg_replace_callback('/\b(20\d{2}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\b/', static fn(array $match): string => e(admin_datetime_label($match[1],$lang)), $html) ?? $html;
     });
