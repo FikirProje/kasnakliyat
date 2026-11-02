@@ -4,7 +4,7 @@ declare(strict_types=1);
 function admin_roles(string $section): array
 {
     return match ($section) {
-        'settings', 'email-templates', 'notification-rules', 'integrations', 'security', 'users', 'audit', 'backup', 'mail', 'languages', 'themes', 'licenses', 'legal' => ['admin'],
+        'settings', 'email-templates', 'notification-rules', 'integrations', 'security', 'users', 'audit', 'backup', 'mail', 'languages', 'themes', 'licenses', 'updates', 'legal' => ['admin'],
         'content', 'editor', 'media', 'gallery', 'seo', 'jobs' => ['admin', 'editor'],
         'requests', 'appointments' => ['admin', 'operator'],
         default => ['admin', 'editor', 'operator'],
@@ -225,7 +225,7 @@ function handle_admin(string $path): void
     $section = trim(substr($path, strlen('/admin')), '/') ?: 'dashboard';
     if ($section === 'login') { admin_login_page(); return; }
     $user = require_login();
-    if (!in_array($section, ['dashboard','logout','requests','appointments','content','editor','media','gallery','seo','settings','email-templates','notification-rules','integrations','users','jobs','audit','backup','mail','languages','themes','licenses','legal'], true)) { http_response_code(404); admin_layout('Bulunamadı','dashboard',$user,'<div class="panel">Bu sayfa bulunamadı.</div>'); return; }
+    if (!in_array($section, ['dashboard','logout','requests','appointments','content','editor','media','gallery','seo','settings','email-templates','notification-rules','integrations','users','jobs','audit','backup','mail','languages','themes','licenses','updates','legal'], true)) { http_response_code(404); admin_layout('Bulunamadı','dashboard',$user,'<div class="panel">Bu sayfa bulunamadı.</div>'); return; }
     require_role(admin_roles($section));
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         csrf_verify();
@@ -238,14 +238,14 @@ function handle_admin(string $path): void
         redirect($destination);
     }
     if ($section === 'logout') { http_response_code(405); header('Allow: POST'); return; }
-    $titles=array_fill_keys(['dashboard','requests','appointments','content','editor','media','gallery','seo','settings','email-templates','notification-rules','integrations','security','users','jobs','audit','backup','mail','languages','themes','licenses','legal'], '');
+    $titles=array_fill_keys(['dashboard','requests','appointments','content','editor','media','gallery','seo','settings','email-templates','notification-rules','integrations','security','users','jobs','audit','backup','mail','languages','themes','licenses','updates','legal'], '');
     foreach (array_keys($titles) as $key) $titles[$key]=admin_section_title($key, admin_user_lang($user));
     ob_start();
     match($section) {
         'requests' => admin_requests_page($section), 'appointments' => admin_appointments_page(),
         'content' => admin_content_page(), 'editor'=>admin_editor_page(), 'media'=>admin_media_page(), 'gallery'=>admin_gallery_page(), 'seo'=>admin_seo_page(),
         'settings'=>admin_settings_page(), 'email-templates'=>admin_email_templates_page(), 'notification-rules'=>admin_notification_rules_page(), 'integrations'=>admin_integrations_page(), 'security'=>admin_security_page($user), 'users'=>admin_users_page(), 'jobs'=>admin_jobs_page(), 'audit'=>admin_audit_page(),
-        'backup'=>admin_backup_page(), 'mail'=>admin_mail_page(), 'languages'=>admin_languages_page(), 'themes'=>admin_themes_page(), 'licenses'=>admin_licenses_page(), 'legal'=>admin_legal_page(), default=>admin_dashboard($user),
+        'backup'=>admin_backup_page(), 'mail'=>admin_mail_page(), 'languages'=>admin_languages_page(), 'themes'=>admin_themes_page(), 'licenses'=>admin_licenses_page(), 'updates'=>admin_updates_page(), 'legal'=>admin_legal_page(), default=>admin_dashboard($user),
     };
     admin_layout($titles[$section],$section,$user,(string)ob_get_clean());
 }
@@ -461,7 +461,7 @@ function admin_layout(string $title,string $section,array $user,string $body): v
         return preg_replace_callback('/\b(20\d{2}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\b/', static fn(array $match): string => e(admin_datetime_label($match[1],$lang)), $html) ?? $html;
     });
     $direction = locale_direction($lang);
-    $nav=['dashboard'=>['◫','Genel Bakış'],'requests'=>['↗','Teklif Talepleri'],'appointments'=>['▦','Randevu Takvimi'],'content'=>['▤','İçerik Stüdyosu'],'languages'=>['文','Dil Paketleri'],'themes'=>['◐','Tema Kütüphanesi'],'licenses'=>['◇','Lisans'],'jobs'=>['✧','Yapay Zekâ İşleri'],'media'=>['▧','Görsel Kütüphanesi'],'gallery'=>['▦','Galeri'],'seo'=>['◎','SEO ve Ana Sayfa'],'mail'=>['✉','E-posta Kuyruğu'],'settings'=>['⚙','Ayarlar'],'email-templates'=>['✉','E-posta Şablonları'],'notification-rules'=>['♧','Bildirim Kuralları'],'integrations'=>['⚡','Entegrasyonlar'],'security'=>['🔒','Hesap Güvenliği'],'users'=>['♙','Kullanıcılar'],'backup'=>['↓','Yedekleme'],'audit'=>['≡','İşlem Kayıtları']];
+    $nav=['dashboard'=>['◫','Genel Bakış'],'requests'=>['↗','Teklif Talepleri'],'appointments'=>['▦','Randevu Takvimi'],'content'=>['▤','İçerik Stüdyosu'],'languages'=>['文','Dil Paketleri'],'themes'=>['◐','Tema Kütüphanesi'],'licenses'=>['◇','Lisans'],'updates'=>['↻','Güncellemeler'],'jobs'=>['✧','Yapay Zekâ İşleri'],'media'=>['▧','Görsel Kütüphanesi'],'gallery'=>['▦','Galeri'],'seo'=>['◎','SEO ve Ana Sayfa'],'mail'=>['✉','E-posta Kuyruğu'],'settings'=>['⚙','Ayarlar'],'email-templates'=>['✉','E-posta Şablonları'],'notification-rules'=>['♧','Bildirim Kuralları'],'integrations'=>['⚡','Entegrasyonlar'],'security'=>['🔒','Hesap Güvenliği'],'users'=>['♙','Kullanıcılar'],'backup'=>['↓','Yedekleme'],'audit'=>['≡','İşlem Kayıtları']];
     // Keep the most frequently needed configuration entry visible before the
     // longer module list on short screens.
     $nav=['settings'=>['⚙','Ayarlar']] + $nav;
@@ -563,6 +563,13 @@ function admin_themes_page(): void
 {
     $themes=rows('SELECT * FROM themes ORDER BY is_active DESC,updated_at DESC'); $editing=(int)($_GET['id']??0); $theme=$editing ? row('SELECT * FROM themes WHERE id=?',[$editing]) : null;
     ?><div class="split"><section class="panel"><h2><?= $theme?'Temayı düzenle':'Yeni tema' ?></h2><p class="muted">Taslak temalar ziyaretçilere uygulanmaz. Tema dili seçildiğinde yalnız o dilde gösterilir; “tüm diller” teması diğer diller için yedektir. Etkinleştirmek temayı otomatik yayınlar.</p><form method="post"><?php admin_action('theme') ?><input type="hidden" name="id" value="<?= (int)($theme['id']??0) ?>"><?php admin_field('Tema adı','name',(string)($theme['name']??''),'text',true); admin_select('Tema dili','locale',['global'=>'Tüm diller']+admin_locales(),(string)($theme['locale']??'global')); admin_field('Ana renk','primary_color',(string)($theme['primary_color']??'#0D2E42')); admin_field('Vurgu rengi','accent_color',(string)($theme['accent_color']??'#FF9149')); admin_textarea('Özel CSS','custom_css',(string)($theme['custom_css']??''),8); admin_select('Yayın durumu','status',['draft'=>'Taslak','published'=>'Yayınla'],(string)($theme['status']??'draft')); ?><label><input type="checkbox" name="is_active" value="1" <?=!empty($theme['is_active'])?'checked':''?>> Bu dilde ziyaretçi sitesinde etkinleştir</label><button>Tema kaydet</button></form></section><section class="panel"><h2>Yayınlanan temalar</h2><?php foreach($themes as $item): ?><p><strong><?=e($item['name'])?></strong> · <?=e($item['locale']==='global'?'Tüm diller':strtoupper($item['locale']))?> · <?=e($item['status'])?> <?= $item['is_active']?'· Etkin':'' ?> <a href="/admin/themes?id=<?= (int)$item['id'] ?>">Düzenle</a></p><?php endforeach ?></section></div><?php
+}
+
+function admin_updates_page(): void
+{
+    $result = update_check(($_GET['check'] ?? '') === '1');
+    $version = envv('APP_VERSION','1.0.0');
+    ?><div class="split"><section class="panel"><h2>Güvenli güncelleme</h2><p class="muted">Sürüm kontrolü lisans merkezine yapılır. Paket indirilmeden önce lisans, alan adı ve kurulum kimliği doğrulanır.</p><p>Kurulu sürüm: <strong><?=e($version)?></strong></p><p>Kurulum kimliği: <code><?=e(update_installation_id())?></code></p><form method="get"><input type="hidden" name="check" value="1"><button>Şimdi kontrol et</button></form></section><section class="panel"><h2>Durum</h2><?php if(!empty($result['offline'])): ?><p class="notice">⚠ <?=e($result['message']??'Lisans merkezi şu anda erişilemiyor.')?></p><?php elseif(empty($result['configured'])): ?><p class="notice"><?=e($result['message']??'Lisans ayarlarını tamamlayın.')?></p><?php elseif(empty($result['active'])): ?><p class="notice">Lisans doğrulanmadı; güncelleme sunulamaz.</p><?php elseif(!empty($result['update'])): $u=$result['update']; ?><p class="notice success">Yeni sürüm hazır: <strong><?=e($u['version']??'')?></strong></p><p><?=nl2br(e($u['changelog']??'Değişiklik notu yok.'))?></p><p class="muted">İndirme ve uygulama adımı; yedek, imza doğrulama ve geri alma kontrolleri tamamlandıktan sonra eklenecek.</p><?php else: ?><p class="notice success">Sistem güncel.</p><?php endif; ?></section></div><section class="panel"><h2>Güncelleme politikası</h2><ul class="checklist"><li>Her sürüm SHA-256 ve imza ile doğrulanır.</li><li>Uygulama kurulumu otomatik zorlanmaz; yönetici onayı gerekir.</li><li>Yedek alınmadan ve migrasyon kontrol edilmeden dosya değiştirilmez.</li><li>Lisans merkezi geçici olarak kapalıysa site grace period içinde çalışmaya devam eder.</li></ul></section><?php
 }
 
 function admin_licenses_page(): void

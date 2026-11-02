@@ -81,7 +81,7 @@ function render_error(int $status, string $message): never {
     $brand = function_exists('setting') ? setting('business_name', 'Transport CMS') : 'Transport CMS';
     echo '<!doctype html><html lang="' . $lang . '" dir="' . $direction . '"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>' . e($brand) . '</title><link rel="stylesheet" href="/assets/site.css"><body><main class="narrow section"><h1>' . $status . '</h1><p>' . e($message) . '</p><a href="/' . $lang . '/">' . e($brand) . '</a></main></body></html>'; exit;
 }
-foreach (['I18n', 'InstallerI18n', 'AdminI18n', 'CountryProfiles', 'Integrations', 'InboundMail', 'License', 'PaymentSignatures', 'PublicSite', 'Admin', 'Installer'] as $module) {
+foreach (['I18n', 'InstallerI18n', 'AdminI18n', 'CountryProfiles', 'Integrations', 'InboundMail', 'License', 'PaymentSignatures', 'UpdateClient', 'PublicSite', 'Admin', 'Installer'] as $module) {
     $file = __DIR__ . '/' . $module . '.php';
     if (is_file($file)) require_once $file;
 }
