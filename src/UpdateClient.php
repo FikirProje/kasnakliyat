@@ -2,6 +2,7 @@
 declare(strict_types=1);
 function update_installation_id(): string { $path=storage_path('installation.id'); $id=is_file($path)?trim((string)file_get_contents($path)):''; if(!preg_match('/^[a-f0-9]{32}$/',$id)){ $id=bin2hex(random_bytes(16)); @file_put_contents($path,$id,LOCK_EX); @chmod($path,0600); } return $id; }
 function update_preflight(): array { return ['PHP '.PHP_VERSION=>version_compare(PHP_VERSION,'8.2.0','>='),'PDO SQLite'=>extension_loaded('pdo_sqlite'),'ZIP'=>class_exists('ZipArchive'),'cURL'=>function_exists('curl_init'),'OpenSSL'=>extension_loaded('openssl'),'storage yazılabilir'=>is_dir(storage_path())&&is_writable(storage_path()),'backup dizini yazılabilir'=>is_dir(storage_path('backups'))&&is_writable(storage_path('backups'))]; }
+function update_verify_signature(array $release): bool { $public=trim(envv('RELEASE_SIGNING_PUBLIC_KEY','')); $signature=(string)($release['signature']??''); $manifest=$release['manifest']??null; if($public===''||!is_array($manifest)||!str_starts_with($signature,'RSA-SHA256.'))return true; $raw=base64_decode(substr($signature,11),true); return is_string($raw)&&openssl_verify(json_encode($manifest,JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE),$raw,$public,OPENSSL_ALGO_SHA256)===1; }
 function update_check(bool $force=false): array {
     $cachePath=storage_path('update-check.json'); $cached=is_file($cachePath)?json_decode((string)file_get_contents($cachePath),true):null; $now=time();
     if(!$force && is_array($cached) && (int)($cached['checked_at_unix']??0)>$now-900)return $cached;
@@ -14,13 +15,14 @@ function update_check(bool $force=false): array {
 }
 function update_download(array $release): string
 {
+    $fresh=update_check(true); if(is_array($fresh['update']??null)&&($fresh['update']['version']??'')===($release['version']??''))$release=$fresh['update'];
     $key=trim((string)setting('license_key','')); $server=rtrim((string)setting('license_server_url',envv('LICENSE_SERVER_URL','https://product.tofidesk.com')),'/'); $version=(string)($release['version']??'');
     if($key===''||$version===''||!filter_var($server,FILTER_VALIDATE_URL)) throw new RuntimeException('Güncelleme indirme ayarları eksik.');
     $path=storage_path('update-'.$version.'.zip'); $ch=curl_init($server.'/updates.php'); $fp=fopen($path,'wb'); if(!$fp)throw new RuntimeException('Güncelleme geçici dosyası oluşturulamadı.');
     $payload=['action'=>'download','license_key'=>$key,'domain'=>license_domain(),'product'=>envv('PRODUCT_SLUG','transport-cms'),'installation_id'=>update_installation_id(),'installed_version'=>envv('APP_VERSION','1.0.0'),'version'=>$version];
     curl_setopt_array($ch,[CURLOPT_POST=>true,CURLOPT_POSTFIELDS=>json_encode($payload),CURLOPT_HTTPHEADER=>['Content-Type: application/json'],CURLOPT_FILE=>$fp,CURLOPT_TIMEOUT=>60,CURLOPT_CONNECTTIMEOUT=>5,CURLOPT_SSL_VERIFYPEER=>true]); $ok=curl_exec($ch); $code=(int)curl_getinfo($ch,CURLINFO_RESPONSE_CODE); $error=curl_error($ch); curl_close($ch); fclose($fp);
     if(!$ok||$code<200||$code>=300){@unlink($path);throw new RuntimeException('Güncelleme paketi indirilemedi.'.($error?' Bağlantıyı kontrol edin.':''));}
-    $expected=strtolower((string)($release['sha256']??'')); if(!preg_match('/^[a-f0-9]{64}$/',$expected)||!hash_equals($expected,strtolower(hash_file('sha256',$path)))){@unlink($path);throw new RuntimeException('Güncelleme paketi SHA-256 doğrulamasından geçmedi.');}
+    $expected=strtolower((string)($release['sha256']??'')); if(!update_verify_signature($release)||!preg_match('/^[a-f0-9]{64}$/',$expected)||!hash_equals($expected,strtolower(hash_file('sha256',$path)))){@unlink($path);throw new RuntimeException('Güncelleme paketi imza veya SHA-256 doğrulamasından geçmedi.');}
     chmod($path,0600); return $path;
 }
 function update_archive_copy(string $source,string $destination): void
