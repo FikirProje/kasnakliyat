@@ -41,6 +41,15 @@ TOFIDESK — SUNUCUYA YÜKLEME
    cookie consent, lisans aktivasyonunu ve yedek geri yüklemeyi kontrol edin.
 
 PLESK/cPANEL KISA KONTROLÜ
+- Plesk: Alan Adları > kasnakliyat.com > PHP Ayarları bölümünde PHP sürümünü
+  8.2/8.3/8.4 seçin. “PHP sürümü” 7.4 görünüyorsa uygulama başlamaz ve eski
+  sunucuda boş 500 alabilirsiniz. Aynı ekranda pdo_sqlite, sqlite3, curl,
+  openssl, mbstring, fileinfo, gd ve zlib uzantılarını etkinleştirin.
+- cPanel: MultiPHP Manager ile alan adını PHP 8.2+ sürümüne alın; MultiPHP
+  INI Editor/Select PHP Version > Extensions bölümünden aynı uzantıları açın.
+- PHP-FPM kullanılıyorsa sürüm değişikliğinden sonra PHP-FPM’i yeniden başlatın
+  veya alan adının PHP handler’ını kaydedin; aksi halde Plesk eski 7.4 worker’ını
+  kullanmaya devam edebilir.
 - Önerilen belge kökü public/ (Plesk httpdocs/public); alternatif olarak
   paketin tamamı httpdocs köküne çıkarılabilir. Kök kurulumunda .htaccess
   src/config/bin/storage/docs/tests/work yollarını web erişimine kapatır.
