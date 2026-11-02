@@ -10,7 +10,11 @@ Create a standalone deployment archive with `python3 bin/package.py /tmp/tofi-tr
 
 CodeCanyon does **not** automatically post a purchase code to a seller's server during a buyer's installation. A buyer receives the purchase code in their Envato download/licence certificate. The installer or the licence page asks for that code. The author server verifies it through Envato's author-sale API using the seller's `ENVATO_PERSONAL_TOKEN`, then creates or activates a TofiDesk licence key. Keep the Envato token only in this centre's server environment.
 
-The included first release provides manual key issuance and secure domain activation. Add the Envato seller token and enable the `/api/v1/envato/verify` endpoint only after testing it on an author account; do not claim automatic CodeCanyon licensing before that verification succeeds.
+The centre provides manual key issuance, secure domain activation and a server-side `/api/v1/envato/verify` endpoint. The endpoint requires `ENVATO_PERSONAL_TOKEN`, applies rate limiting and must be verified on an author account before enabling automatic fulfilment. Do not claim automatic CodeCanyon licensing when that server secret is absent.
+
+## Buyer portal
+
+Buyers use `/account/register` and `/account/login` to view their products, licences, domains, downloads, orders, invoices and support tickets. Payment provider callbacks are intentionally separate from this portal; a paid order must be created only after a verified provider event.
 
 ## API contract
 
