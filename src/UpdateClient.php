@@ -19,10 +19,12 @@ function update_verify_signature(array $release): bool
     $signature = (string) ($release['signature'] ?? '');
     $manifest = $release['manifest'] ?? null;
     if ($public === '' || !is_array($manifest) || !str_starts_with($signature, 'RSA-SHA256.')) return false;
+    $publicKey = openssl_pkey_get_public($public);
+    if ($publicKey === false) return false;
     $raw = base64_decode(substr($signature, 11), true);
     if (!is_string($raw) || $raw === '') return false;
     $canonical = json_encode($manifest, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
-    return openssl_verify($canonical, $raw, $public, OPENSSL_ALGO_SHA256) === 1;
+    return openssl_verify($canonical, $raw, $publicKey, OPENSSL_ALGO_SHA256) === 1;
 }
 function update_check(bool $force=false): array {
     $cachePath=storage_path('update-check.json'); $cached=is_file($cachePath)?json_decode((string)file_get_contents($cachePath),true):null; $now=time();
