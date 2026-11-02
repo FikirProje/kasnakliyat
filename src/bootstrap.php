@@ -78,7 +78,8 @@ function render_error(int $status, string $message): never {
     http_response_code($status);
     header('Content-Type: text/html; charset=utf-8');
     $lang = request_lang(); $direction = function_exists('locale_direction') ? locale_direction($lang) : 'ltr';
-    echo '<!doctype html><html lang="' . $lang . '" dir="' . $direction . '"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Kaş Nakliyat</title><link rel="stylesheet" href="/assets/site.css"><body><main class="narrow section"><h1>' . $status . '</h1><p>' . e($message) . '</p><a href="/' . $lang . '/">Kaş Nakliyat</a></main></body></html>'; exit;
+    $brand = function_exists('setting') ? setting('business_name', 'Transport CMS') : 'Transport CMS';
+    echo '<!doctype html><html lang="' . $lang . '" dir="' . $direction . '"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>' . e($brand) . '</title><link rel="stylesheet" href="/assets/site.css"><body><main class="narrow section"><h1>' . $status . '</h1><p>' . e($message) . '</p><a href="/' . $lang . '/">' . e($brand) . '</a></main></body></html>'; exit;
 }
 foreach (['I18n', 'InstallerI18n', 'AdminI18n', 'CountryProfiles', 'Integrations', 'InboundMail', 'License', 'PaymentSignatures', 'PublicSite', 'Admin', 'Installer'] as $module) {
     $file = __DIR__ . '/' . $module . '.php';
