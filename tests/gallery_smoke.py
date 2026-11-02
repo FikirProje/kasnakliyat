@@ -15,6 +15,7 @@ import urllib.request
 
 ROOT = Path(__file__).resolve().parents[1]
 PHP = os.environ.get("PHP_BIN") or shutil.which("php") or "/workspace/.runtime/bin/php"
+PHP_COMMAND = [os.environ.get("COMSPEC", "cmd.exe"), "/c", PHP] if os.name == "nt" and PHP.lower().endswith(".cmd") else [PHP]
 
 with tempfile.TemporaryDirectory(prefix="kas-gallery-") as temporary:
     work = Path(temporary)
@@ -33,10 +34,10 @@ query('UPDATE media_translations SET alt=?,caption=? WHERE media_id=? AND lang=?
 query('INSERT INTO users(name,email,password_hash,role) VALUES(?,?,?,?)',['Editor','editor@example.test',password_hash('gallery-test-password',PASSWORD_DEFAULT),'editor']);
 echo $id;
 """
-    seeded = subprocess.run([PHP], input=seed, text=True, cwd=ROOT, env=env, capture_output=True, timeout=30)
+    seeded = subprocess.run(PHP_COMMAND, input=seed, text=True, cwd=ROOT, env=env, capture_output=True, timeout=30)
     assert seeded.returncode == 0, seeded.stderr
     media_id = int(seeded.stdout.strip())
-    server = subprocess.Popen([PHP, "-S", f"127.0.0.1:{port}", "-t", "public", "public/index.php"], cwd=ROOT, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    server = subprocess.Popen(PHP_COMMAND + ["-S", f"127.0.0.1:{port}", "-t", "public", "public/index.php"], cwd=ROOT, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     try:
         for _ in range(60):
             try:
