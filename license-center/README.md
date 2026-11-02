@@ -6,6 +6,14 @@ The centre issues licence keys, limits each key to configured domains, publishes
 
 Create a standalone deployment archive by compressing the `license-center` directory with the public directory as the document root. The repository's prepared archive is `outputs/product-tofidesk-license-center.zip`.
 
+## Deployment map
+
+- Upload this archive to product.tofidesk.com as the sales and licence centre.
+- Upload product-tofidesk-app-deployment.zip to kasnakliyat.com for the main CMS demo.
+- Deliver product-tofidesk-marketplace.zip to new customers as the clean generic CMS package.
+
+Extract the selected archive directly into the domain's httpdocs document root. Keep .env, SQLite data and private storage outside the public web root where possible. Never upload the main CMS archive to the sales centre or the licence-centre archive to a customer's CMS domain.
+
 ## CodeCanyon / Envato flow
 
 CodeCanyon does **not** automatically post a purchase code to a seller's server during a buyer's installation. A buyer receives the purchase code in their Envato download/licence certificate. The installer or the licence page asks for that code. The author server verifies it through Envato's author-sale API using the seller's `ENVATO_PERSONAL_TOKEN`, then creates or activates a TofiDesk licence key. Keep the Envato token only in this centre's server environment.
