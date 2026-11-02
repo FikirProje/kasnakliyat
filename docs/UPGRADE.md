@@ -26,7 +26,7 @@ The license centre uses its own SQLite database. Back up `license-center/storage
 ## Release checklist
 
 - [ ] No `.env`, customer media, credentials or database is in the marketplace ZIP.
-- [ ] `/install` is protected by `INSTALL_TOKEN` and locks after the first administrator.
+- [ ] `/install` is a one-time first-admin flow and locks automatically after the first administrator.
 - [ ] Admin locale and RTL smoke checks pass.
 - [ ] License activate/check rate-limit and domain-limit checks pass.
 - [ ] Payment and Envato secrets are configured only on the server, never in the buyer package.

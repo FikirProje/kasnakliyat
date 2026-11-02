@@ -6,8 +6,8 @@ The repository does not include a hosted public domain. To publish a neutral dem
 
 1. Create a fresh subdomain such as `demo.example.com` and an empty database/storage location.
 2. Upload the marketplace ZIP and point the document root to the extracted public directory.
-3. Copy `.env.example` to `.env`; set a long random install token and a demo-only `APP_URL`.
-4. Open `/install?token=...`, create a demo administrator and keep the install token private.
+3. Copy `.env.example` to `.env`; set a demo-only `APP_URL`.
+4. Open `/install`, create a demo administrator, then remove or restrict the installer entry after setup.
 5. Add neutral sample content only; never import customer backups, real email credentials or payment keys.
 6. Verify one LTR locale, one RTL locale, the public shop, `/pricing`, buyer registration, `/theme-preview` and license activate/check.
 
@@ -17,7 +17,7 @@ Use a separate database and storage volume for the demo. Disable outbound SMTP a
 
 ## Acceptance URLs
 
-- `/install?token=...`
+- `/install` (one-time first-admin setup)
 - `/shop`
 - `/pricing`
 - `/account/register`

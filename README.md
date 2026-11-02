@@ -69,7 +69,7 @@ Uzak Windows masaüstü, Linux sunucu veya VS Code Remote SSH kullanırken aynı
 git clone https://github.com/FikirProje/kasnakliyat.git
 cd kasnakliyat
 cp .env.example .env
-# APP_URL, APP_ENV ve gerekiyorsa INSTALL_TOKEN değerlerini yalnız bu sunucuda düzenleyin.
+# APP_URL ve APP_ENV değerlerini yalnız bu sunucuda düzenleyin; installer ilk yöneticiyle birlikte otomatik kilitlenir.
 php bin/console.php migrate
 php bin/console.php check
 ```

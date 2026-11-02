@@ -5,8 +5,8 @@
 1. Deploy the **deployment** profile for Kaş Nakliyat, or the **marketplace** profile for a buyer:
    `python3 bin/package.py --profile=deployment --output=site.zip`
 2. Set the web server document root to `public/`; keep `.env` and `storage/` outside the web root.
-3. Set `APP_ENV=production`, the final HTTPS-only `APP_URL`, a strong `INSTALL_TOKEN`, and restrictive file permissions.
-4. Open `/install`, select the installer language, create the first administrator, then remove `INSTALL_TOKEN`.
+3. Set `APP_ENV=production`, the final HTTPS-only `APP_URL`, and restrictive file permissions.
+4. Open `/install`, select the installer language, and create the first administrator. The installer closes automatically after the first account.
 5. Configure the business name, contact details, legal text, logo, services, gallery and social profiles in the panel.
 
 ## Search engines and social platforms
