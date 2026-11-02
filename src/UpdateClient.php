@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 function update_installation_id(): string { $path=storage_path('installation.id'); $id=is_file($path)?trim((string)file_get_contents($path)):''; if(!preg_match('/^[a-f0-9]{32}$/',$id)){ $id=bin2hex(random_bytes(16)); @file_put_contents($path,$id,LOCK_EX); @chmod($path,0600); } return $id; }
+function update_preflight(): array { return ['PHP '.PHP_VERSION=>version_compare(PHP_VERSION,'8.2.0','>='),'PDO SQLite'=>extension_loaded('pdo_sqlite'),'ZIP'=>class_exists('ZipArchive'),'cURL'=>function_exists('curl_init'),'OpenSSL'=>extension_loaded('openssl'),'storage yazılabilir'=>is_dir(storage_path())&&is_writable(storage_path()),'backup dizini yazılabilir'=>is_dir(storage_path('backups'))&&is_writable(storage_path('backups'))]; }
 function update_check(bool $force=false): array {
     $cachePath=storage_path('update-check.json'); $cached=is_file($cachePath)?json_decode((string)file_get_contents($cachePath),true):null; $now=time();
     if(!$force && is_array($cached) && (int)($cached['checked_at_unix']??0)>$now-900)return $cached;

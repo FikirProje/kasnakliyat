@@ -578,6 +578,8 @@ function admin_updates_page(): void
     $result = update_check(($_GET['check'] ?? '') === '1');
     $version = setting('app_version',envv('APP_VERSION','1.0.0'));
     admin_update_packages_page();
+    $preflight=update_preflight();
+    admin_update_preflight_page($preflight);
     ?><div class="split"><section class="panel"><h2>Güvenli güncelleme</h2><p class="muted">Sürüm kontrolü lisans merkezine yapılır. Paket indirilmeden önce lisans, alan adı ve kurulum kimliği doğrulanır.</p><p>Kurulu sürüm: <strong><?=e($version)?></strong></p><p>Kurulum kimliği: <code><?=e(update_installation_id())?></code></p><form method="get"><input type="hidden" name="check" value="1"><button>Şimdi kontrol et</button></form></section><section class="panel"><h2>Durum</h2><?php if(!empty($result['offline'])): ?><p class="notice">⚠ <?=e($result['message']??'Lisans merkezi şu anda erişilemiyor.')?></p><?php elseif(empty($result['configured'])): ?><p class="notice"><?=e($result['message']??'Lisans ayarlarını tamamlayın.')?></p><?php elseif(empty($result['active'])): ?><p class="notice">Lisans doğrulanmadı; güncelleme sunulamaz.</p><?php elseif(!empty($result['update'])): $u=$result['update']; ?><p class="notice success">Yeni sürüm hazır: <strong><?=e($u['version']??'')?></strong></p><p><?=nl2br(e($u['changelog']??'Değişiklik notu yok.'))?></p><form method="post"><?php admin_action('download_update'); ?><input type="hidden" name="version" value="<?=e($u['version']??'')?>"><input type="hidden" name="sha256" value="<?=e($u['sha256']??'')?>"><button>Paketi indir ve doğrula</button></form><p class="muted">Bu işlem yalnızca paketi indirir; dosyaları değiştirmez. Uygulama adımı yedek ve geri alma kontrollerinden sonra yapılacak.</p><?php else: ?><p class="notice success">Sistem güncel.</p><?php endif; ?></section></div><section class="panel"><h2>Güncelleme politikası</h2><ul class="checklist"><li>Her sürüm SHA-256 ve imza ile doğrulanır.</li><li>Uygulama kurulumu otomatik zorlanmaz; yönetici onayı gerekir.</li><li>Yedek alınmadan ve migrasyon kontrol edilmeden dosya değiştirilmez.</li><li>Lisans merkezi geçici olarak kapalıysa site grace period içinde çalışmaya devam eder.</li></ul></section><?php
 }
 
@@ -585,6 +587,11 @@ function admin_update_packages_page(): void
 {
     $packages=glob(storage_path('update-*.zip'))?:[]; if(!$packages)return;
     ?><section class="panel"><h2>Doğrulanmış paketler</h2><p class="muted">Uygulama yalnızca yönetici onayıyla değişir. Her paket uygulanmadan önce otomatik veri yedeği alınır.</p><?php foreach($packages as $package): $name=basename($package); if(!preg_match('/^update-(.+)\.zip$/',$name,$m))continue; ?><form method="post" class="inline-form"><?php admin_action('apply_update'); ?><input type="hidden" name="version" value="<?=e($m[1])?>"><strong><?=e($name)?></strong><button>Yedekle ve uygula</button></form><?php endforeach; ?></section><?php
+}
+
+function admin_update_preflight_page(array $checks): void
+{
+    ?><section class="panel"><h2>Sunucu ön kontrolü</h2><ul class="checklist"><?php foreach($checks as $label=>$ok): ?><li><?= $ok?'✓':'○' ?> <?=e($label)?> <span class="badge"><?= $ok?'Hazır':'Eksik' ?></span></li><?php endforeach; ?></ul><p class="muted">Plesk/cPanel üzerinde güncelleme için tüm maddeler hazır olmalıdır.</p></section><?php
 }
 
 function admin_licenses_page(): void
