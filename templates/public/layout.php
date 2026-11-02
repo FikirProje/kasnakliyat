@@ -106,6 +106,8 @@ if($page!=='home' && $page!=='404') {
 $mapAddress=setting('address');
 $mapQuery=rawurlencode($mapAddress);
 $mapEmbed='https://www.google.com/maps?q='.$mapQuery.'&output=embed';
+$configuredMap=trim((string)setting('map_embed_url',''));
+if ($configuredMap!=='' && filter_var($configuredMap,FILTER_VALIDATE_URL) && strtolower((string)parse_url($configuredMap,PHP_URL_SCHEME))==='https') $mapEmbed=$configuredMap;
 $mapOpen='https://www.google.com/maps/search/?api=1&query='.$mapQuery;
 $mapDirections='https://www.google.com/maps/dir/?api=1&destination='.$mapQuery;
 ?>
