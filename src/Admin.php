@@ -344,6 +344,10 @@ function admin_post(string $section, array $user): void
         $version=admin_input('version',40); $sha=admin_input('sha256',64); if(!preg_match('/^\d+(?:\.\d+){1,3}(?:[-+][A-Za-z0-9.-]+)?$/',$version)||!preg_match('/^[a-f0-9]{64}$/i',$sha)) throw new InvalidArgumentException('Güncelleme sürümü veya özeti geçersiz.');
         $path=update_download(['version'=>$version,'sha256'=>$sha]); audit('update.downloaded',$version); flash('success','Paket indirildi ve SHA-256 doğrulandı: '.basename($path).'. Uygulama adımı henüz başlatılmadı; önce yedek alın.'); return;
     }
+    if ($section === 'updates' && $action === 'apply_update') {
+        $version=admin_input('version',40); if(!preg_match('/^\d+(?:\.\d+){1,3}(?:[-+][A-Za-z0-9.-]+)?$/',$version)) throw new InvalidArgumentException('Güncelleme sürümü geçersiz.');
+        $backup=update_apply($version); flash('success','Güncelleme uygulandı. Veri yedeği: '.basename($backup)); return;
+    }
     if ($section === 'licenses' && $action === 'license') {
         $server=admin_input('license_server_url',300); $key=admin_input('license_key',100);
         if($server!=='' && (!filter_var($server,FILTER_VALIDATE_URL)||!str_starts_with(strtolower($server),'https://'))) throw new InvalidArgumentException('Lisans sunucusu HTTPS adresi olmalı.');
@@ -572,8 +576,15 @@ function admin_themes_page(): void
 function admin_updates_page(): void
 {
     $result = update_check(($_GET['check'] ?? '') === '1');
-    $version = envv('APP_VERSION','1.0.0');
+    $version = setting('app_version',envv('APP_VERSION','1.0.0'));
+    admin_update_packages_page();
     ?><div class="split"><section class="panel"><h2>Güvenli güncelleme</h2><p class="muted">Sürüm kontrolü lisans merkezine yapılır. Paket indirilmeden önce lisans, alan adı ve kurulum kimliği doğrulanır.</p><p>Kurulu sürüm: <strong><?=e($version)?></strong></p><p>Kurulum kimliği: <code><?=e(update_installation_id())?></code></p><form method="get"><input type="hidden" name="check" value="1"><button>Şimdi kontrol et</button></form></section><section class="panel"><h2>Durum</h2><?php if(!empty($result['offline'])): ?><p class="notice">⚠ <?=e($result['message']??'Lisans merkezi şu anda erişilemiyor.')?></p><?php elseif(empty($result['configured'])): ?><p class="notice"><?=e($result['message']??'Lisans ayarlarını tamamlayın.')?></p><?php elseif(empty($result['active'])): ?><p class="notice">Lisans doğrulanmadı; güncelleme sunulamaz.</p><?php elseif(!empty($result['update'])): $u=$result['update']; ?><p class="notice success">Yeni sürüm hazır: <strong><?=e($u['version']??'')?></strong></p><p><?=nl2br(e($u['changelog']??'Değişiklik notu yok.'))?></p><form method="post"><?php admin_action('download_update'); ?><input type="hidden" name="version" value="<?=e($u['version']??'')?>"><input type="hidden" name="sha256" value="<?=e($u['sha256']??'')?>"><button>Paketi indir ve doğrula</button></form><p class="muted">Bu işlem yalnızca paketi indirir; dosyaları değiştirmez. Uygulama adımı yedek ve geri alma kontrollerinden sonra yapılacak.</p><?php else: ?><p class="notice success">Sistem güncel.</p><?php endif; ?></section></div><section class="panel"><h2>Güncelleme politikası</h2><ul class="checklist"><li>Her sürüm SHA-256 ve imza ile doğrulanır.</li><li>Uygulama kurulumu otomatik zorlanmaz; yönetici onayı gerekir.</li><li>Yedek alınmadan ve migrasyon kontrol edilmeden dosya değiştirilmez.</li><li>Lisans merkezi geçici olarak kapalıysa site grace period içinde çalışmaya devam eder.</li></ul></section><?php
+}
+
+function admin_update_packages_page(): void
+{
+    $packages=glob(storage_path('update-*.zip'))?:[]; if(!$packages)return;
+    ?><section class="panel"><h2>Doğrulanmış paketler</h2><p class="muted">Uygulama yalnızca yönetici onayıyla değişir. Her paket uygulanmadan önce otomatik veri yedeği alınır.</p><?php foreach($packages as $package): $name=basename($package); if(!preg_match('/^update-(.+)\.zip$/',$name,$m))continue; ?><form method="post" class="inline-form"><?php admin_action('apply_update'); ?><input type="hidden" name="version" value="<?=e($m[1])?>"><strong><?=e($name)?></strong><button>Yedekle ve uygula</button></form><?php endforeach; ?></section><?php
 }
 
 function admin_licenses_page(): void

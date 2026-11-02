@@ -22,3 +22,22 @@ function update_download(array $release): string
     $expected=strtolower((string)($release['sha256']??'')); if(!preg_match('/^[a-f0-9]{64}$/',$expected)||!hash_equals($expected,strtolower(hash_file('sha256',$path)))){@unlink($path);throw new RuntimeException('Güncelleme paketi SHA-256 doğrulamasından geçmedi.');}
     chmod($path,0600); return $path;
 }
+function update_archive_copy(string $source,string $destination): void
+{
+    if(!is_dir($destination)&&!mkdir($destination,0700,true))throw new RuntimeException('Güncelleme yedek dizini oluşturulamadı.');
+    $it=new RecursiveIteratorIterator(new RecursiveDirectoryIterator($source,FilesystemIterator::SKIP_DOTS),RecursiveIteratorIterator::SELF_FIRST);
+    foreach($it as $item){$rel=str_replace('\\','/',substr($item->getPathname(),strlen($source)+1));if($rel===''||str_starts_with($rel,'storage/')||$rel==='.env')continue;$target=$destination.'/'.$rel;if($item->isDir()){if(!is_dir($target))mkdir($target,0700,true);}else{if(!is_dir(dirname($target)))mkdir(dirname($target),0700,true);copy($item->getPathname(),$target);}}
+}
+function update_apply(string $version): string
+{
+    $zipPath=storage_path('update-'.$version.'.zip'); if(!is_file($zipPath))throw new RuntimeException('Önce güncelleme paketini indirin.');
+    $staging=storage_path('update-staging-'.$version); $rollback=storage_path('update-rollback-'.$version); if(is_dir($staging))integration_remove_tree($staging);if(is_dir($rollback))throw new RuntimeException('Bu sürüm için geri alma kaydı zaten mevcut.');
+    $zip=new ZipArchive();if($zip->open($zipPath)!==true)throw new RuntimeException('Güncelleme ZIP dosyası açılamadı.');
+    for($i=0;$i<$zip->numFiles;$i++){ $name=str_replace('\\','/',$zip->getNameIndex($i)); if($name===''||str_starts_with($name,'/')||preg_match('#(^|/)\.\.?(/|$)#',$name)){$zip->close();throw new RuntimeException('Güncelleme paketi geçersiz yol içeriyor.');} }
+    if(!$zip->extractTo($staging)){$zip->close();throw new RuntimeException('Güncelleme geçici alana açılamadı.');}$zip->close();
+    $root=$staging; if(is_dir($staging.'/httpdocs'))$root=$staging.'/httpdocs'; elseif(is_dir($staging.'/app'))$root=$staging.'/app';
+    if(!is_file($root.'/src/bootstrap.php')&&!is_file($root.'/index.php')){integration_remove_tree($staging);throw new RuntimeException('Paket uygulama kökü doğrulanamadı.');}
+    $backup=create_backup(); update_archive_copy(ROOT,$rollback); file_put_contents(storage_path('maintenance.flag'),gmdate('c'),LOCK_EX);
+    try { update_archive_copy($root,ROOT); save_setting('app_version',$version); audit('update.applied',$version); @unlink($zipPath); integration_remove_tree($staging); @unlink(storage_path('maintenance.flag')); return $backup; }
+    catch(Throwable $e){ if(is_dir($rollback))update_archive_copy($rollback,ROOT);@unlink(storage_path('maintenance.flag'));throw $e; }
+}
