@@ -1,5 +1,24 @@
 <?php
 declare(strict_types=1);
+function tofidesk_startup_failure(string $message): never {
+    if (!headers_sent()) {
+        http_response_code(503);
+        header('Content-Type: text/html; charset=utf-8');
+        header('Cache-Control: no-store');
+    }
+    $detail = htmlspecialchars($message, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    echo '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TofiDesk kurulum tanılama</title><style>body{font:16px/1.6 system-ui;background:#092b3d;color:#153346;margin:0;padding:28px}.card{max-width:780px;margin:8vh auto;background:#f7faf8;border-radius:18px;padding:34px}h1{color:#08283a}code{display:block;background:#edf3f0;padding:14px;border-radius:8px;white-space:pre-wrap;overflow-wrap:anywhere;color:#7a241b}</style><main class="card"><strong>TOFIDESK</strong><h1>Kurulum tanılaması gerekli</h1><p>Uygulama başlangıcında bir hata oluştu. Plesk hata günlüğündeki kayıtla karşılaştırın.</p><code>'.$detail.'</code><p>Kontrol: <b>storage</b> yazma izni, SQLite/PDO SQLite uzantıları ve httpdocs dosya bütünlüğü.</p></main>';
+    exit;
+}
+set_exception_handler(static function (Throwable $exception): never {
+    tofidesk_startup_failure(get_class($exception).': '.$exception->getMessage());
+});
+register_shutdown_function(static function (): void {
+    $error = error_get_last();
+    if ($error && in_array($error['type'], [E_ERROR, E_CORE_ERROR, E_COMPILE_ERROR, E_PARSE], true)) {
+        tofidesk_startup_failure($error['message']);
+    }
+});
 function preflight_requirements_page(): void {
     $required = ['pdo_sqlite' => 'PDO SQLite', 'sqlite3' => 'SQLite3', 'curl' => 'cURL', 'openssl' => 'OpenSSL', 'mbstring' => 'mbstring', 'fileinfo' => 'fileinfo', 'gd' => 'GD/WebP'];
     $missing = [];
