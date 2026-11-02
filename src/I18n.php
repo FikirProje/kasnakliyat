@@ -18,6 +18,19 @@ function core_locales(): array
     return ['tr' => 'Türkçe', 'en' => 'English', 'de' => 'Deutsch', 'fr' => 'Français', 'es' => 'Español', 'it' => 'Italiano', 'pt' => 'Português', 'nl' => 'Nederlands', 'ru' => 'Русский', 'ar' => 'العربية', 'zh' => '中文', 'ja' => '日本語', 'ko' => '한국어', 'fa' => 'فارسی'];
 }
 
+function preferred_browser_locale(): string
+{
+    $supported = array_keys(core_locales());
+    $header = strtolower((string)($_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? ''));
+    foreach (explode(',', $header) as $part) {
+        $code = strtolower(trim(explode(';', $part, 2)[0]));
+        $base = substr($code, 0, 2);
+        if (in_array($code, $supported, true)) return $code;
+        if (in_array($base, $supported, true)) return $base;
+    }
+    return 'tr';
+}
+
 /** Includes unpublished custom packages so editors can prepare them safely. */
 function admin_locales(): array
 {
