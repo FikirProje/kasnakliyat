@@ -3,10 +3,11 @@ TOFIDESK — SUNUCUYA YÜKLEME
 1. PHP 8.2 veya üzerini seçin. PDO SQLite, mbstring, fileinfo, cURL,
    OpenSSL, GD/WebP ve zlib eklentilerini etkinleştirin.
 
-2. ZIP'i uygulama klasörüne açın. Alan adının belge kökünü bu klasörün
-   içindeki public klasörüne yönlendirin. cPanel/Plesk'te uygulama dosyaları
-   httpdocs dışında, yalnız public/ web kökü olacak şekilde yapılandırılabilir.
-   storage/ dizini PHP kullanıcısı tarafından yazılabilir olmalıdır.
+2. ZIP'i doğrudan alan adının httpdocs köküne açabilirsiniz; bu paket kök
+   index.php ve .htaccess ile cPanel/Plesk httpdocs kurulumunu destekler.
+   Daha sıkı izolasyon için document root'u public/ klasörüne yönlendirmek de
+   mümkündür. Her iki yerleşimde de storage/ dizini PHP kullanıcısı
+   tarafından yazılabilir olmalıdır.
 
 3. .env.example dosyasını .env olarak kopyalayın ve en az şunları ayarlayın:
    APP_URL=https://example.com
@@ -39,8 +40,9 @@ TOFIDESK — SUNUCUYA YÜKLEME
    cookie consent, lisans aktivasyonunu ve yedek geri yüklemeyi kontrol edin.
 
 PLESK/cPANEL KISA KONTROLÜ
-- Alan adı belge kökü public/ (Plesk httpdocs/public) olmalı; uygulama kökü
-  ve storage web üzerinden erişilebilir olmamalıdır.
+- Önerilen belge kökü public/ (Plesk httpdocs/public); alternatif olarak
+  paketin tamamı httpdocs köküne çıkarılabilir. Kök kurulumunda .htaccess
+  src/config/bin/storage/docs/tests/work yollarını web erişimine kapatır.
 - storage/ yazılabilir, PHP sürümü 8.2+, PDO SQLite/mbstring/fileinfo/cURL/
   OpenSSL/GD-WebP/zlib etkin olmalı.
 - Cron: php /tam/yol/bin/worker.php all
