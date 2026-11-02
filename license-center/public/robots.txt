@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /shop
+Allow: /pricing
+Allow: /blog
+Disallow: /account
+Disallow: /admin
+Disallow: /login
+Disallow: /install
+Disallow: /api/
+Sitemap: https://product.tofidesk.com/sitemap.xml
