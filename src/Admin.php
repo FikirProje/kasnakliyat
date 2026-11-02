@@ -51,6 +51,23 @@ function admin_lang(): string
     return $lang;
 }
 
+function admin_user_lang(array $user): string
+{
+    $requested = (string)($_REQUEST['lang'] ?? '');
+    if ($requested !== '' && array_key_exists($requested, admin_locales())) return $requested;
+    $saved = row('SELECT preference_value FROM user_preferences WHERE user_id=? AND preference_key=?', [(int)$user['id'], 'admin_locale']);
+    $lang = (string)($saved['preference_value'] ?? setting('admin_locale', 'en'));
+    return array_key_exists($lang, admin_locales()) ? $lang : 'en';
+}
+
+function admin_save_locale(array $user): void
+{
+    $lang = (string)($_POST['lang'] ?? '');
+    if (!array_key_exists($lang, admin_locales())) throw new InvalidArgumentException('Geçersiz dil.');
+    query("INSERT INTO user_preferences(user_id,preference_key,preference_value,updated_at) VALUES(?,?,?,datetime('now')) ON CONFLICT(user_id,preference_key) DO UPDATE SET preference_value=excluded.preference_value,updated_at=datetime('now')", [(int)$user['id'], 'admin_locale', $lang]);
+    flash('success', admin_t('language_saved', $lang));
+}
+
 function admin_input(string $key, int $max = 1000): string
 {
     $value = trim((string)($_POST[$key] ?? ''));
@@ -215,6 +232,7 @@ function handle_admin(string $path): void
 function admin_post(string $section, array $user): void
 {
     $action = (string)($_POST['action'] ?? '');
+    if ($action === 'set_admin_locale') { admin_save_locale($user); return; }
     if ($section === 'logout') { logout_user(); redirect('/admin/login'); }
     if (in_array($section,['requests','appointments'],true) && $action === 'request') { admin_save_request(); return; }
     if (in_array($section,['requests','appointments'],true) && $action === 'reply') {
@@ -349,8 +367,10 @@ function admin_login_page(): void
 
 function admin_layout(string $title,string $section,array $user,string $body): void
 {
+    $lang = admin_user_lang($user);
+    $direction = locale_direction($lang);
     $nav=['dashboard'=>['◫','Genel bakış'],'requests'=>['↗','Teklif talepleri'],'appointments'=>['▦','Randevular'],'content'=>['▤','İçerik stüdyosu'],'languages'=>['文','Dil paketleri'],'themes'=>['◐','Tema kütüphanesi'],'licenses'=>['◇','Lisans'],'jobs'=>['✧','Yapay zekâ işleri'],'media'=>['▧','Görsel kütüphanesi'],'gallery'=>['▦','Galeri'],'seo'=>['◎','SEO merkezi'],'mail'=>['✉','E-posta kuyruğu'],'settings'=>['⚙','Ayarlar'],'users'=>['♙','Kullanıcılar'],'backup'=>['↓','Yedekleme'],'audit'=>['≡','İşlem kayıtları']];
-    ?><!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title><?= e($title) ?> · Kaş Nakliyat</title><link rel="stylesheet" href="/assets/admin.css"></head><body><a href="#main" class="skip">İçeriğe geç</a><aside class="sidebar"><a class="brand" href="/admin">KAŞ<span>NAKLİYAT</span></a><span class="sidebar-caption">YÖNETİM MERKEZİ</span><nav aria-label="Yönetim"><?php foreach($nav as $key=>[$icon,$label]): if(!admin_allowed($key,$user))continue; ?><a class="<?= ($section===$key || ($section==='editor'&&$key==='content'))?'active':'' ?>" href="/admin<?= $key==='dashboard'?'':'/'.$key ?>"><span aria-hidden="true"><?= $icon ?></span><?= e($label) ?></a><?php endforeach ?></nav><div class="sidebar-bottom"><a href="/tr/">Web sitesini aç ↗</a><p><?= e($user['name']) ?><small><?= e($user['role']) ?></small></p><form method="post" action="/admin/logout"><?= csrf_field() ?><button class="logout" type="submit">Oturumu kapat</button></form></div></aside><div class="workspace"><header class="topbar"><span>Kaş Nakliyat <span class="crumb">/ <?= e($title) ?></span></span><span class="topbar-right">TR <span class="avatar"><?= e(mb_substr($user['name'],0,1)) ?></span></span></header><main id="main" class="main"><div class="page-heading"><div><p class="eyebrow">ÇALIŞMA ALANINIZ</p><h1><?= e($title) ?></h1></div><time datetime="<?= date('Y-m-d') ?>"><?= date('d.m.Y') ?></time></div><?php foreach(take_flash() as $flash): ?><p class="notice <?= e($flash['kind']) ?>" role="status"><?= e($flash['message']) ?></p><?php endforeach ?><?= $body ?></main><footer class="admin-footer">Kaş Nakliyat · Bağımsız yönetim platformu <span>Europe/Istanbul</span></footer></div></body></html><?php
+    ?><!doctype html><html lang="<?= e($lang) ?>" dir="<?= e($direction) ?>"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title><?= e($title) ?> · Kaş Nakliyat</title><link rel="stylesheet" href="/assets/admin.css"></head><body><a href="#main" class="skip"><?= e(admin_t('skip',$lang)) ?></a><aside class="sidebar"><a class="brand" href="/admin">KAŞ<span>NAKLİYAT</span></a><span class="sidebar-caption"><?= e(admin_t('management',$lang)) ?></span><nav aria-label="<?= e(admin_t('management',$lang)) ?>"><?php foreach($nav as $key=>[$icon,$label]): if(!admin_allowed($key,$user))continue; ?><a class="<?= ($section===$key || ($section==='editor'&&$key==='content'))?'active':'' ?>" href="/admin<?= $key==='dashboard'?'':'/'.$key ?>"><span aria-hidden="true"><?= $icon ?></span><?= e($label) ?></a><?php endforeach ?></nav><div class="sidebar-bottom"><a href="/tr/"><?= e(admin_t('open_site',$lang)) ?> ↗</a><form method="post" class="language-form"><?= admin_action('set_admin_locale'); admin_select(admin_t('language',$lang),'lang',admin_locales(),$lang) ?><button class="secondary" type="submit"><?= e(admin_t('save_language',$lang)) ?></button></form><p><?= e($user['name']) ?><small><?= e($user['role']) ?></small></p><form method="post" action="/admin/logout"><?= csrf_field() ?><button class="logout" type="submit"><?= e(admin_t('logout',$lang)) ?></button></form></div></aside><div class="workspace"><header class="topbar"><span>Kaş Nakliyat <span class="crumb">/ <?= e($title) ?></span></span><span class="topbar-right"><?= e(strtoupper($lang)) ?> <span class="avatar"><?= e(mb_substr($user['name'],0,1)) ?></span></span></header><main id="main" class="main"><div class="page-heading"><div><p class="eyebrow"><?= e(admin_t('workspace',$lang)) ?></p><h1><?= e($title) ?></h1></div><time datetime="<?= date('Y-m-d') ?>"><?= date('d.m.Y') ?></time></div><?php foreach(take_flash() as $flash): ?><p class="notice <?= e($flash['kind']) ?>" role="status"><?= e($flash['message']) ?></p><?php endforeach ?><?= $body ?></main><footer class="admin-footer">Kaş Nakliyat · Bağımsız yönetim platformu <span>Europe/Istanbul</span></footer></div></body></html><?php
 }
 
 function admin_dashboard(array $user): void
