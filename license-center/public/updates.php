@@ -55,6 +55,14 @@ try {
     if($existing && (int)$existing['license_id']!==$licenseId)throw new RuntimeException('Installation is bound to another licence.');
     if($existing) update_query('UPDATE installations SET domain=?,installed_version=?,migration_version=?,php_version=?,last_seen_at=CURRENT_TIMESTAMP,status=\'active\' WHERE id=?',[$domain,$installed,$migration,$php,$existing['id']]);
     else { update_query('INSERT INTO installations(license_id,installation_hash,product,domain,installed_version,migration_version,php_version,grace_until) VALUES(?,?,?,?,?,?,?,datetime(\'now\',\'+14 days\'))',[$licenseId,$installation,$product,$domain,$installed,$migration,$php]);$existing=update_one('SELECT * FROM installations WHERE installation_hash=?',[$installation]); }
+    $requestedAction=(string)($input['action']??'check');
+    if($requestedAction==='download') {
+        $requestedVersion=(string)($input['version']??'');
+        $release=update_one("SELECT r.* FROM application_releases r JOIN products p ON p.id=r.product_id WHERE p.slug=? AND p.status='published' AND r.channel='stable' AND r.status='published' AND r.version=?",[$product,$requestedVersion]);
+        if(!$release||!is_file($release['package_path'])) throw new RuntimeException('Requested release is unavailable.');
+        update_query('INSERT INTO update_events(installation_id,license_id,from_version,to_version,action,detail) VALUES(?,?,?,?,?,?)',[$existing['id'],$licenseId,$installed,$release['version'],'download',$domain]);
+        header('Content-Type: application/zip'); header('Content-Length: '.filesize($release['package_path'])); header('Content-Disposition: attachment; filename="'.basename($release['package_name']).'"'); header('X-TofiDesk-SHA256: '.$release['sha256']); readfile($release['package_path']); exit;
+    }
     update_query('INSERT INTO update_events(installation_id,license_id,from_version,action,detail) VALUES(?,?,?,?,?)',[$existing['id'],$licenseId,$installed,'check',$domain]);
     $releases=update_db()->prepare("SELECT r.*,p.slug AS product_slug FROM application_releases r JOIN products p ON p.id=r.product_id WHERE p.slug=? AND p.status='published' AND r.channel='stable' AND r.status='published' ORDER BY r.created_at DESC");$releases->execute([$product]);$release=null;
     foreach($releases->fetchAll() as $candidate)if(version_compare((string)$candidate['version'],$installed,'>')){$release=$candidate;break;}
