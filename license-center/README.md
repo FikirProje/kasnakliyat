@@ -6,6 +6,8 @@ The centre issues licence keys, limits each key to configured domains, publishes
 
 Create a standalone deployment archive by compressing the `license-center` directory with the public directory as the document root. The repository's prepared archive is `outputs/product-tofidesk-license-center.zip`.
 
+If URL rewriting is unavailable, open /installer.php instead of /install for the first administrator setup.
+
 ## Deployment map
 
 - Upload this archive to product.tofidesk.com as the sales and licence centre.
