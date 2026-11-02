@@ -22,6 +22,24 @@
 
 product.tofidesk.com satış/lisans merkezidir; müşterinin çalıştıracağı CMS değildir. kasnakliyat.com demo CMS'tir. Bir müşteriye teslim edilecek temiz paket marketplace ZIP'idir. Canlı ödeme ve sağlayıcı anahtarları yalnızca sunucu ortamında tanımlanır.
 
+## Release operations
+
+The sales-centre admin uses these protected routes:
+
+- `/releases` — published application releases and compatibility requirements
+- `/installations` — authorised installation/domain telemetry
+- `/update-events` — update checks, downloads and applied/failed events
+
+Deployment order:
+
+1. Upload the license-centre archive to `product.tofidesk.com` and configure its private `.env` and SQLite storage.
+2. Upload the deployment archive to the demo domain and run its installer once.
+3. Configure the demo's license server URL, license key and `RELEASE_SIGNING_PUBLIC_KEY`.
+4. Publish releases from the license centre CLI; customer installations check, download and apply them only after admin approval.
+5. For a buyer, upload only the marketplace archive to the buyer's `httpdocs`/document root and configure the buyer's own branding in `/install`.
+
+Never upload the license-centre database, private signing key, `.env`, backups or customer media into a buyer archive.
+
 ## Dağıtım öncesi kontrol
 
 - PHP 8.2+, PDO SQLite/SQLite3, cURL, OpenSSL, mbstring, fileinfo ve GD/WebP etkin.
