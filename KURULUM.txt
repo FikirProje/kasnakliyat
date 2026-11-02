@@ -45,3 +45,14 @@ PLESK/cPANEL KISA KONTROLÜ
   OpenSSL/GD-WebP/zlib etkin olmalı.
 - Cron: php /tam/yol/bin/worker.php all
 - İlk kurulumdan sonra /install kapanır; yönetim: /admin/login.
+
+TEST VE YAYIN ÖNCESİ DOĞRULAMA
+- PHP CLI ve web PHP aynı sürüm/eklenti setini kullanmalıdır. Özellikle
+  PDO SQLite, SQLite3, GD/WebP, cURL, OpenSSL, mbstring, fileinfo ve zlib
+  etkin olmalıdır.
+- Depodaki tam smoke testi: python tests/smoke.py
+- SMTP loopback testi: python tests/smtp_smoke.py
+- Paket bütünlüğü: python tests/release_audit.py ve
+  python tests/license_center_smoke.py
+- Testler gerçek ödeme, SMS, WhatsApp, AI veya SMTP hesabına bağlanmaz;
+  sağlayıcı anahtarı yoksa güvenli test modu kullanılır.
