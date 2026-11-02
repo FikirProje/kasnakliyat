@@ -53,6 +53,7 @@ if($page!=='home' && $page!=='404') {
 }
 ?><script type="application/ld+json"><?=json_encode($schema,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT)?></script>
 <link rel="manifest" href="/manifest.webmanifest"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="<?=e($brand)?>">
+<link rel="icon" href="<?=e(setting('favicon_url','/assets/favicon.svg'))?>"><meta name="application-name" content="<?=e(setting('pwa_name',setting('business_name','Kaş Nakliyat')))?>"><meta name="description" content="<?=e(setting('pwa_description',$description))?>">
 </head>
 <body>
 <a class="skip" href="#main"><?=e(t('skip_link',$lang))?></a>
