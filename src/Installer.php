@@ -36,7 +36,7 @@ function handle_install(): void
             // Explicitly enabled installation may initialize the schema. This also
             // gives token attempts a durable IP rate limit, independent of cookies.
             migrate();
-            if ((int) row('SELECT count(*) AS n FROM users')['n'] !== 0) {
+            if (is_file(storage_path('installed.lock')) || (int) row('SELECT count(*) AS n FROM users')['n'] !== 0) {
                 render_error(403, 'İlk kurulum tamamlandı. Kurulum ekranı kapalıdır. Yönetim panelinden giriş yapın.');
             }
         } catch (Throwable $error) {
@@ -87,6 +87,7 @@ function handle_install(): void
                             save_setting('country_code',$countryCode);
                             audit('installation.completed', 'İlk yönetici oluşturuldu.');
                             db()->exec('COMMIT');
+                            file_put_contents(storage_path('installed.lock'), gmdate('c')."\n", LOCK_EX);
                         } catch (Throwable $error) {
                             db()->exec('ROLLBACK');
                             error_log('First administrator creation failed: '.get_class($error));

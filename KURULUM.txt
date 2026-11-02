@@ -12,7 +12,8 @@ TOFIDESK — SUNUCUYA YÜKLEME
 3. .env.example dosyasını .env olarak kopyalayın ve en az şunları ayarlayın:
    APP_URL=https://example.com
    APP_ENV=production
-   Kurulum tokensızdır; ilk yönetici oluşturulduktan sonra /install otomatik kapanır.
+   Kurulum tokensızdır; ilk yönetici oluşturulduktan sonra storage/installed.lock
+   oluşturulur ve /install ile /install.php erişimi otomatik olarak kilitlenir.
 
 4. /install adresini açın. Rewrite kapalıysa /install.php adresini kullanın.
    Sunucu kontrollerini tamamlayın, kurulum dilini,
