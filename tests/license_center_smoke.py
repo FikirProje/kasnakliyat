@@ -14,6 +14,7 @@ assert "buyer_session_epoch" in INDEX, "buyer session revocation missing"
 assert "lc_send_account_email" in ACCOUNT_ROUTES, "account mail transport missing"
 assert "lc_smtp_send" in ACCOUNT_ROUTES, "SMTP transport missing"
 assert "storage/outbox" in ACCOUNT_ROUTES, "test-mode outbox missing"
+assert "error_log" not in ACCOUNT_ROUTES, "account tokens must never be written to logs"
 assert "lc_cookie_consent" in ACCOUNT_ROUTES and "data-lc-cookie" in ACCOUNT_ROUTES, "sales cookie consent missing"
 assert "googletagmanager" in INDEX and "lc_cookie_consent" in ACCOUNT_ROUTES, "sales analytics consent gate missing"
 for metric in ["orders", "revenue", "downloads", "webhook_errors"]:
