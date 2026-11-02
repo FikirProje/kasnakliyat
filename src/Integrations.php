@@ -149,6 +149,37 @@ function enqueue_notification(string $channel, string $recipient, string $messag
     return (int) db()->lastInsertId();
 }
 
+function deliver_notification(string $channel, string $provider, string $recipient, string $message): void
+{
+    if (!function_exists('curl_init')) throw new RuntimeException('cURL eklentisi gerekli.');
+    $post = static function (string $url, array|string $fields, array $headers = []): array {
+        $curl=curl_init($url); curl_setopt_array($curl,[CURLOPT_RETURNTRANSFER=>true,CURLOPT_POST=>true,CURLOPT_POSTFIELDS=>$fields,CURLOPT_HTTPHEADER=>$headers,CURLOPT_TIMEOUT=>15,CURLOPT_CONNECTTIMEOUT=>5]);
+        $body=curl_exec($curl); $code=(int)curl_getinfo($curl,CURLINFO_HTTP_CODE); $error=curl_error($curl); curl_close($curl);
+        if($body===false||$error!==''||$code<200||$code>=300) throw new RuntimeException('Bildirim sağlayıcısı HTTP hatası ('.$code.').');
+        return is_string($body)?(json_decode($body,true)?:[]):[];
+    };
+    if($channel==='sms'&&$provider==='twilio') {
+        $sid=envv('TWILIO_ACCOUNT_SID');$token=envv('TWILIO_AUTH_TOKEN');$from=envv('TWILIO_SMS_FROM');
+        if($sid===''||$token===''||$from==='') throw new RuntimeException('Twilio SMS ayarları eksik.');
+        $post('https://api.twilio.com/2010-04-01/Accounts/'.rawurlencode($sid).'/Messages.json',['To'=>$recipient,'From'=>$from,'Body'=>$message],['Authorization: Basic '.base64_encode($sid.':'.$token)]); return;
+    }
+    if($channel==='whatsapp'&&$provider==='twilio') {
+        $sid=envv('TWILIO_ACCOUNT_SID');$token=envv('TWILIO_AUTH_TOKEN');$from=envv('TWILIO_WHATSAPP_FROM');
+        if($sid===''||$token===''||$from==='') throw new RuntimeException('Twilio WhatsApp ayarları eksik.');
+        $post('https://api.twilio.com/2010-04-01/Accounts/'.rawurlencode($sid).'/Messages.json',['To'=>'whatsapp:'.$recipient,'From'=>'whatsapp:'.$from,'Body'=>$message],['Authorization: Basic '.base64_encode($sid.':'.$token)]); return;
+    }
+    if($channel==='whatsapp'&&$provider==='cloud') {
+        $token=envv('WHATSAPP_ACCESS_TOKEN');$phone=envv('WHATSAPP_PHONE_NUMBER_ID');
+        if($token===''||$phone==='') throw new RuntimeException('WhatsApp Cloud ayarları eksik.');
+        $post('https://graph.facebook.com/v20.0/'.rawurlencode($phone).'/messages',json_encode(['messaging_product'=>'whatsapp','to'=>$recipient,'type'=>'text','text'=>['body'=>$message]],JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR),['Authorization: Bearer '.$token,'Content-Type: application/json']); return;
+    }
+    if($channel==='sms'&&$provider==='netgsm') {
+        if(envv('NETGSM_USER')===''||envv('NETGSM_PASSWORD')===''||envv('NETGSM_HEADER')==='') throw new RuntimeException('NetGSM ayarları eksik.');
+        $post('https://api.netgsm.com.tr/sms/rest/v2/send',json_encode(['msgheader'=>envv('NETGSM_HEADER'),'messages'=>[['msg'=>$message,'no'=>$recipient]]],JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR),['Content-Type: application/json','Authorization: Basic '.base64_encode(envv('NETGSM_USER').':'.envv('NETGSM_PASSWORD'))]); return;
+    }
+    throw new RuntimeException('Seçili sağlayıcı için adaptör veya gerekli ayarlar bulunamadı.');
+}
+
 function send_notification_queue(int $limit = 10): array
 {
     $counts = ['sent'=>0,'failed'=>0];
@@ -157,11 +188,10 @@ function send_notification_queue(int $limit = 10): array
         if (!$item) break;
         $provider = $item['channel']==='sms' ? setting('sms_provider','none') : setting('whatsapp_provider','none');
         $configured = $item['channel']==='sms'
-            ? (($provider==='netgsm' && envv('NETGSM_USER')!=='' && envv('NETGSM_PASSWORD')!=='') || ($provider==='iletimerkezi' && envv('ILETIMERKEZI_API_KEY')!=='') || ($provider==='twilio' && envv('TWILIO_ACCOUNT_SID')!=='' && envv('TWILIO_AUTH_TOKEN')!==''))
+            ? (($provider==='netgsm' && envv('NETGSM_USER')!=='' && envv('NETGSM_PASSWORD')!=='' && envv('NETGSM_HEADER')!=='') || ($provider==='iletimerkezi' && envv('ILETIMERKEZI_API_KEY')!=='') || ($provider==='twilio' && envv('TWILIO_ACCOUNT_SID')!=='' && envv('TWILIO_AUTH_TOKEN')!==''))
             : (($provider==='cloud' && envv('WHATSAPP_ACCESS_TOKEN')!=='') || ($provider==='twilio' && envv('TWILIO_ACCOUNT_SID')!=='' && envv('TWILIO_AUTH_TOKEN')!==''));
-        $error = !$configured ? 'Sağlayıcı anahtarı eksik; güvenli test modu.' : 'Sağlayıcı adaptörü etkinleştirilmeden gerçek gönderim yapılmaz.';
-        query("UPDATE notification_queue SET status='failed',claimed_at=NULL,last_error=? WHERE id=?", [$error,$item['id']]);
-        $counts['failed']++;
+        try { if(!$configured) throw new RuntimeException('Sağlayıcı anahtarı eksik; güvenli test modu.'); deliver_notification($item['channel'],$provider,$item['recipient'],$item['message']); query("UPDATE notification_queue SET status='sent',claimed_at=NULL,last_error='' WHERE id=?",[$item['id']]); $counts['sent']++; }
+        catch(Throwable $error) { query("UPDATE notification_queue SET status='failed',claimed_at=NULL,last_error=? WHERE id=?",[mb_substr($error->getMessage(),0,800),$item['id']]); $counts['failed']++; }
     }
     return $counts;
 }
