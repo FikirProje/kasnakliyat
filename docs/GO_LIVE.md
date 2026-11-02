@@ -32,3 +32,4 @@ Google and Pinterest verification are also available in the administration setti
 - Confirm `robots.txt`, sitemap, canonical, all enabled language URLs, 404 handling and HTTPS redirects.
 - Take an encrypted backup and verify a restore in a non-production directory.
 - For Plesk/cPanel, verify the document root is `public/` (or `httpdocs/public/`), `storage/` is writable but not public, HTTPS is forced, and the cron command uses the selected PHP binary.
+- Run `php bin/hosting-check.php` on the target PHP runtime (or upload it temporarily as `hosting-check.php`) and remove the diagnostic file after the check.
