@@ -11,6 +11,7 @@ assert "csp_nonce()" in PUBLIC_LAYOUT, "custom theme CSS is not nonce-bound"
 assert "social-links" in PUBLIC_LAYOUT and "noopener noreferrer" in PUBLIC_LAYOUT, "social profile links are not accessible and safe"
 assert "setting('business_name'" in PUBLIC_LAYOUT, "public brand is not settings-driven"
 assert "tofidesk_cookie_consent" in PUBLIC_LAYOUT and "data-cookie-accept" in (ROOT / "public" / "assets" / "site.js").read_text(encoding="utf-8"), "cookie consent flow missing"
+assert "analyticsId" in PUBLIC_LAYOUT and "cookie_consent" in PUBLIC_LAYOUT, "analytics is not consent-gated"
 PUBLIC_SITE = (ROOT / "src" / "PublicSite.php").read_text(encoding="utf-8")
 assert "kullanim-sartlari" in PUBLIC_SITE and "destek-sla" in PUBLIC_SITE, "legal routes missing"
 ADMIN = (ROOT / "src" / "Admin.php").read_text(encoding="utf-8")
