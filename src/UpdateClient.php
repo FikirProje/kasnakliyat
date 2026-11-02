@@ -13,7 +13,17 @@ function update_current_version(): string
     return preg_match('/^\d+(?:\.\d+){1,3}(?:[-+][A-Za-z0-9.-]+)?$/', $fallback) ? $fallback : '1.0.0';
 }
 function update_preflight(): array { return ['PHP '.PHP_VERSION=>version_compare(PHP_VERSION,'8.2.0','>='),'PDO SQLite'=>extension_loaded('pdo_sqlite'),'ZIP'=>class_exists('ZipArchive'),'cURL'=>function_exists('curl_init'),'OpenSSL'=>extension_loaded('openssl'),'storage yazılabilir'=>is_dir(storage_path())&&is_writable(storage_path()),'backup dizini yazılabilir'=>is_dir(storage_path('backups'))&&is_writable(storage_path('backups'))]; }
-function update_verify_signature(array $release): bool { $public=trim(envv('RELEASE_SIGNING_PUBLIC_KEY','')); $signature=(string)($release['signature']??''); $manifest=$release['manifest']??null; if($public===''||!is_array($manifest)||!str_starts_with($signature,'RSA-SHA256.'))return true; $raw=base64_decode(substr($signature,11),true); return is_string($raw)&&openssl_verify(json_encode($manifest,JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE),$raw,$public,OPENSSL_ALGO_SHA256)===1; }
+function update_verify_signature(array $release): bool
+{
+    $public = trim((string) envv('RELEASE_SIGNING_PUBLIC_KEY', ''));
+    $signature = (string) ($release['signature'] ?? '');
+    $manifest = $release['manifest'] ?? null;
+    if ($public === '' || !is_array($manifest) || !str_starts_with($signature, 'RSA-SHA256.')) return false;
+    $raw = base64_decode(substr($signature, 11), true);
+    if (!is_string($raw) || $raw === '') return false;
+    $canonical = json_encode($manifest, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+    return openssl_verify($canonical, $raw, $public, OPENSSL_ALGO_SHA256) === 1;
+}
 function update_check(bool $force=false): array {
     $cachePath=storage_path('update-check.json'); $cached=is_file($cachePath)?json_decode((string)file_get_contents($cachePath),true):null; $now=time();
     if(!$force && is_array($cached) && (int)($cached['checked_at_unix']??0)>$now-900)return $cached;
