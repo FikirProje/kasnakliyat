@@ -19,8 +19,9 @@ ob_start(static function (string $html) use ($lang): string {
         if ($host === '' || preg_match('/[\r\n\"<>]/', $url)) continue;
         $links .= '<a class="social-link" href="'.e($url).'" target="_blank" rel="noopener noreferrer" aria-label="'.e($aria).'">'.e($label).'</a>';
     }
-    if ($links === '') return $html;
-    $block = '<nav class="social-links" aria-label="Social media">'.$links.'</nav>';
+    $legal = '<nav class="legal-links" aria-label="Legal"><a href="/'.e($lang).'/kullanim-sartlari/">'.e(t('terms_title', $lang)).'</a><a href="/'.e($lang).'/destek-sla/">'.e(t('sla_title', $lang)).'</a></nav>';
+    if ($links === '') return str_replace('</footer>', $legal.'</footer>', $html);
+    $block = '<nav class="social-links" aria-label="Social media">'.$links.'</nav>'.$legal;
     return str_replace('</footer>', $block.'</footer>', $html);
 });
 ?>
@@ -82,6 +83,8 @@ if($page!=='home' && $page!=='404') {
 <article class="section article-page"><div class="narrow"><a class="text-link" href="<?=e($root)?>blog/"><?=public_icon('arrow-left')?> <?=e(t('back_blog',$lang))?></a><p class="eyebrow"><?=e($article['category'])?></p><h1><?=e($article['title'])?></h1><p class="section-intro"><?=e($article['excerpt'])?></p><?php if(!empty($article['cover_media_id'])):?><img class="article-cover" src="/media/<?=e($article['cover_media_id'])?>?variant=webp" alt="<?=e($coverAlt)?>" width="1200" height="675"><?php endif?><div class="article-body"><?=nl2br(e($article['body']))?></div><a class="button" href="<?=e($root)?>teklif-al/"><?=e(t('quote_cta',$lang))?> <?=public_icon('arrow-up')?></a></div></article>
 <?php elseif($page==='service'):?>
 <section class="page-intro"><div class="wrap"><p class="eyebrow"><?=e(t('service_eyebrow',$lang))?></p><h1><?=e(t('service_title',$lang))?></h1><p class="section-intro"><?=e(t('service_intro',$lang))?></p></div></section><section class="section"><div class="wrap service-grid"><div><h2><?=e(t('process_title',$lang))?></h2><p class="section-intro"><?=e(t('service_body',$lang))?></p><p><?=e(t('service_scope_note',$lang))?></p><a class="button" href="<?=e($root)?>teklif-al/"><?=e(t('quote_cta',$lang))?> <?=public_icon('arrow-up')?></a></div><div class="service-detail-steps"><?php for($i=1;$i<=3;$i++):?><article><span>0<?=$i?></span><div><h3><?=e(t('step'.$i.'_title',$lang))?></h3><p><?=e(t('step'.$i.'_text',$lang))?></p></div></article><?php endfor?></div></div></section>
+<?php elseif($page==='terms' || $page==='sla'):?>
+<section class="section"><div class="narrow"><p class="eyebrow"><?=e($brand)?></p><h1><?=e($title)?></h1><div class="article-body"><p><?=e(t($page==='terms'?'terms_text':'sla_text',$lang))?></p><?php $legalKey=$page==='terms'?'legal_terms_':'legal_sla_'; if(setting($legalKey.$lang)):?><p><?=nl2br(e(setting($legalKey.$lang)))?></p><?php endif?><p><?=e(t('privacy_requests',$lang))?></p></div></div></section>
 <?php elseif($page==='privacy'):?>
 <section class="section"><div class="narrow"><p class="eyebrow">KAŞ NAKLİYAT</p><h1><?=e(t('privacy_title',$lang))?></h1><div class="article-body"><p><?=e(t('privacy_text',$lang))?></p><p><?=e(t('privacy_controller',$lang))?></p><?php if(setting('legal_controller_'.$lang)):?><p><?=nl2br(e(setting('legal_controller_'.$lang)))?></p><?php endif?><p><?=e(t('privacy_requests',$lang))?></p><?php if(setting('legal_processing_'.$lang)):?><p><?=nl2br(e(setting('legal_processing_'.$lang)))?></p><?php endif?><p><?=e(t('privacy_rights',$lang))?></p><?php if(setting('legal_rights_'.$lang)):?><p><?=nl2br(e(setting('legal_rights_'.$lang)))?></p><?php endif?></div></div></section>
 <?php else:?>

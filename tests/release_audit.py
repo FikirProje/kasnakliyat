@@ -10,6 +10,8 @@ assert "style-src 'self' 'nonce-" in BOOTSTRAP and "unsafe-inline" not in BOOTST
 assert "csp_nonce()" in PUBLIC_LAYOUT, "custom theme CSS is not nonce-bound"
 assert "social-links" in PUBLIC_LAYOUT and "noopener noreferrer" in PUBLIC_LAYOUT, "social profile links are not accessible and safe"
 assert "setting('business_name'" in PUBLIC_LAYOUT, "public brand is not settings-driven"
+PUBLIC_SITE = (ROOT / "src" / "PublicSite.php").read_text(encoding="utf-8")
+assert "kullanim-sartlari" in PUBLIC_SITE and "destek-sla" in PUBLIC_SITE, "legal routes missing"
 
 assert ARCHIVE.is_file(), f"missing archive: {ARCHIVE}"
 with zipfile.ZipFile(ARCHIVE) as archive:

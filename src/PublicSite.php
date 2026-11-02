@@ -58,7 +58,7 @@ function public_gallery_json(string $lang): never {
 function public_routes_for_sitemap(): array {
     $routes = [];
     foreach (array_keys(locales()) as $lang) {
-        foreach ([''=>'home','hizmetler/yuk-tasimaciligi/'=>'service','blog/'=>'blog','galeri/'=>'gallery','teklif-al/'=>'quote','randevu/'=>'appointment','gizlilik/'=>'privacy'] as $tail=>$group) {
+        foreach ([''=>'home','hizmetler/yuk-tasimaciligi/'=>'service','blog/'=>'blog','galeri/'=>'gallery','teklif-al/'=>'quote','randevu/'=>'appointment','gizlilik/'=>'privacy','kullanim-sartlari/'=>'terms','destek-sla/'=>'sla'] as $tail=>$group) {
             if ($group==='service' && row('SELECT t.id FROM translations t JOIN articles a ON a.id=t.article_id WHERE t.lang=? AND t.slug=? AND a.kind=? AND '.public_visible_sql(),[$lang,'yuk-tasimaciligi','service'])) continue;
             $routes[] = ['path'=>"/$lang/$tail",'lang'=>$lang,'group'=>$group];
         }
@@ -125,6 +125,8 @@ function handle_public(string $path): void {
     elseif ($tail==='teklif-al') $page='quote';
     elseif ($tail==='randevu') $page='appointment';
     elseif ($tail==='gizlilik') $page='privacy';
+    elseif ($tail==='kullanim-sartlari') $page='terms';
+    elseif ($tail==='destek-sla') $page='sla';
     elseif ($tail==='hizmetler/yuk-tasimaciligi') {
         $page='service';
         foreach(public_published($lang,'yuk-tasimaciligi') as $candidate) { if($candidate['kind']==='service') { $article=$candidate; $page='article'; break; } }
@@ -149,9 +151,9 @@ function handle_public(string $path): void {
         if ($errors) http_response_code(422);
     }
     $galleryLabels=gallery_labels($lang);
-    $titleKeys=['home'=>'hero_title','service'=>'service_title','blog'=>'blog_title','quote'=>'quote_title','appointment'=>'appointment_title','privacy'=>'privacy_title','404'=>'not_found'];
+    $titleKeys=['home'=>'hero_title','service'=>'service_title','blog'=>'blog_title','quote'=>'quote_title','appointment'=>'appointment_title','privacy'=>'privacy_title','terms'=>'terms_title','sla'=>'sla_title','404'=>'not_found'];
     $title=$article ? ($article['seo_title'] ?: $article['title']) : ($page==='gallery' ? $galleryLabels[0] : ($page==='home' ? (setting('homepage_title_'.$lang) ?: t('hero_title',$lang)) : t($titleKeys[$page] ?? 'hero_title',$lang)));
-    $descriptionKeys=['home'=>'hero_text','service'=>'service_intro','blog'=>'blog_intro','quote'=>'quote_intro','appointment'=>'appointment_intro','privacy'=>'privacy_text','404'=>'not_found_text'];
+    $descriptionKeys=['home'=>'hero_text','service'=>'service_intro','blog'=>'blog_intro','quote'=>'quote_intro','appointment'=>'appointment_intro','privacy'=>'privacy_text','terms'=>'terms_text','sla'=>'sla_text','404'=>'not_found_text'];
     $description=$article ? ($article['seo_description'] ?: $article['excerpt']) : ($page==='gallery' ? $galleryLabels[1] : ($page==='home' ? (setting('homepage_intro_'.$lang) ?: t('hero_text',$lang)) : t($descriptionKeys[$page] ?? 'hero_text',$lang)));
     $heroTitle=$page==='home' ? (setting('homepage_title_'.$lang) ?: t('hero_title',$lang)) : $title;
     if ($page==='home') {

@@ -376,7 +376,7 @@ function admin_post(string $section, array $user): void
         $id=enqueue_notification($channel,$recipient,$message); audit('notification.test_queued',$channel.' #'.$id); flash('success','Bildirim test kuyruğuna alındı. Sağlayıcı anahtarı yoksa gerçek gönderim yapılmaz.'); return;
     }
     if ($section === 'seo' && $action === 'homepage') {
-        $lang=admin_lang(); foreach(['homepage_title'=>180,'homepage_intro'=>1000,'homepage_seo_title'=>180,'homepage_seo_description'=>400,'legal_controller'=>5000,'legal_processing'=>10000,'legal_rights'=>5000] as $field=>$limit) save_setting($field.'_'.$lang,admin_input($field,$limit));
+    $lang=admin_lang(); foreach(['homepage_title'=>180,'homepage_intro'=>1000,'homepage_seo_title'=>180,'homepage_seo_description'=>400,'legal_controller'=>5000,'legal_processing'=>10000,'legal_rights'=>5000,'legal_terms'=>10000,'legal_sla'=>10000] as $field=>$limit) save_setting($field.'_'.$lang,admin_input($field,$limit));
         audit('homepage.updated',$lang); flash('success','Ana sayfa dil metinleri kaydedildi.'); return;
     }
     if ($section === 'users' && $action === 'user') {
