@@ -16,7 +16,7 @@ Audit date: 2026-11-02. This is an evidence-based release gate, not a marketing 
 
 1. **Do not use a chat-shared API key.** A key supplied in conversation must be revoked and replaced through the deployment secret store. PHP exception traces can include function arguments in server logs unless `zend.exception_ignore_args=1` is set; no secret should reach application logs.
 2. **Generic archive is not clean.** The repository contains Kaş name, address, contact details, logos, supplied hero image and share cards. Build a separate generic distribution profile that excludes all customer assets, configuration and database content.
-3. **Theme custom CSS conflicts with the current CSP.** The application sends `style-src 'self'`, so its inline `<style>` custom-theme block is blocked by browsers. Generate a same-origin CSS file with strict ownership/validation or use a nonce-based CSP; do not weaken CSP with `unsafe-inline`.
+3. **Resolved — theme custom CSS and CSP.** The public layout emits the validated custom-theme block with the per-request `csp_nonce()` and the bootstrap policy allows that nonce; the policy does not use `unsafe-inline`. The admin rejects closing tags and oversized CSS values.
 4. **The product cannot yet claim a 14-language admin/installer.** Public UI has fourteen built-in locales, but installer and admin are primarily Turkish/English and their language dictionaries are incomplete.
 
 ### P1 — required before the claimed feature set
