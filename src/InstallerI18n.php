@@ -52,6 +52,8 @@ function installer_t(string $key, string $lang): string
         'ko'=>['eyebrow'=>'구성할 준비가 되었습니다','website_url'=>'사이트 URL','token_hint'=>'The installer closes automatically after the first administrator is created.','storage_hint'=>'웹 루트는 public/이어야 하며 데이터 디렉터리는 웹에서 접근할 수 없어야 합니다.','url_notice'=>'이 URL은 브라우저에서 감지됩니다. 게시 전에 APP_URL을 최종 HTTPS 도메인으로 설정하세요.','closed'=>'첫 계정 생성 후 이 페이지는 닫힙니다. AI와 이메일은 관리자 패널에서 설정하세요.','footer'=>'Transport CMS · 독립 웹 플랫폼'],
         'fa'=>['eyebrow'=>'آماده پیکربندی','website_url'=>'نشانی وب‌سایت','token_hint'=>'The installer closes automatically after the first administrator is created.','storage_hint'=>'ریشه وب باید public/ باشد و پوشه داده نباید از وب قابل دسترسی باشد.','url_notice'=>'این نشانی از مرورگر تشخیص داده می‌شود. پیش از انتشار APP_URL را روی دامنه HTTPS نهایی تنظیم کنید.','closed'=>'این صفحه پس از ایجاد حساب نخست بسته می‌شود. هوش مصنوعی و ایمیل را در پنل مدیریت تنظیم کنید.','footer'=>'Transport CMS · پلتفرم وب مستقل'],
     ];
+    if ($key === 'token') return ['tr'=>'Kurulum anahtarı gerektirmez','en'=>'Tokenless setup'][$lang] ?? 'Tokenless setup';
+    if ($key === 'token_hint') return ['tr'=>'İlk yönetici oluşturulduktan sonra kurulum otomatik olarak kapanır.','en'=>'The installer closes automatically after the first administrator is created.'][$lang] ?? 'The installer closes automatically after the first administrator is created.';
     if (isset($shared[$lang])) $native[$lang] = array_merge($shared[$lang], $native[$lang] ?? []);
     return $native[$lang][$key] ?? $english[$key] ?? $key;
 }

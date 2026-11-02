@@ -14,6 +14,7 @@ def main():
             fields = dict(
                 app_url=runner.base,
                 business_name="Demo Transport",
+                country_code="US",
                 admin_name="Installer test",
                 admin_email="first-admin@example.test",
                 admin_password=runner.password,
@@ -26,6 +27,9 @@ def main():
             assert status == 200 and "/admin/login" in url and len(records) == 1
             assert records[0]["password_hash"] != runner.password
             assert runner.sql("SELECT value FROM settings WHERE key='business_name'")[0]["value"] == "Demo Transport"
+            assert runner.sql("SELECT value FROM settings WHERE key='country_code'")[0]["value"] == "US"
+            assert runner.sql("SELECT value FROM settings WHERE key='country_currency'")[0]["value"] == "USD"
+            assert runner.sql("SELECT value FROM settings WHERE key='country_timezone'")[0]["value"] == "America/New_York"
             print("PASS tokenless first-admin installation creates one hashed account")
             assert browser.get("/install")[0] == 403
             assert browser.request("/install", fields)[0] == 403
