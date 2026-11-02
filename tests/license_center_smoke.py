@@ -10,6 +10,8 @@ locales = ["tr", "en", "de", "fr", "es", "it", "pt", "ru", "ar", "fa", "nl", "zh
 assert all(f"'{locale}'" in INDEX for locale in locales), "locale coverage missing"
 assert "LICENSE_INSTALL_TOKEN" not in ENV, "obsolete installer token remains"
 assert "Tokenless first setup" in INSTALLER, "tokenless installer copy missing"
+assert "onchange="if(this.value)location.href=this.value"" in INSTALLER and "class="sr-only"" in INSTALLER, "installer locale selector missing"
+assert all(("'"+locale+"'=>'") in INSTALLER for locale in locales), "installer locale names missing"
 assert "buyer_session_epoch" in INDEX, "buyer session revocation missing"
 assert "lc_send_account_email" in ACCOUNT_ROUTES, "account mail transport missing"
 assert "lc_smtp_send" in ACCOUNT_ROUTES, "SMTP transport missing"
