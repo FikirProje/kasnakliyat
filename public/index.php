@@ -61,6 +61,9 @@ if (row("SELECT name FROM sqlite_master WHERE type='table' AND name='migrations'
 try {
     if (rtrim($path, '/') === '/install' && function_exists('handle_install')) { handle_install(); exit; }
     if (!row("SELECT name FROM sqlite_master WHERE type='table' AND name='migrations'")) render_error(503, 'Uygulama kurulumu tamamlanmadı.');
+    if (rtrim($path, '/') === '' && !is_file(storage_path('installed.lock')) && (int) row('SELECT count(*) AS n FROM users')['n'] === 0) {
+        header('Location: /install', true, 302); exit;
+    }
     if (preg_match('/[\x00-\x1f\\\\]/', $path) || str_contains($path, '..')) render_error(400, 'Geçersiz adres.');
     $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
     if (!in_array($method, ['GET', 'HEAD', 'POST'], true)) { header('Allow: GET, HEAD, POST'); render_error(405, t('error_method', request_lang())); }
