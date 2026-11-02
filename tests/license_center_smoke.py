@@ -14,6 +14,8 @@ assert "buyer_session_epoch" in INDEX, "buyer session revocation missing"
 assert "lc_send_account_email" in ACCOUNT_ROUTES, "account mail transport missing"
 assert "lc_smtp_send" in ACCOUNT_ROUTES, "SMTP transport missing"
 assert "storage/outbox" in ACCOUNT_ROUTES, "test-mode outbox missing"
+for feature in ["theme_versions", "changelog", "preview_url", "price_minor", "license_type", "/theme-preview", "/theme-versions"]:
+    assert feature in INDEX, f"theme sales feature missing: {feature}"
 for route in ["/shop", "/pricing", "/account/register", "/account/forgot-password", "/orders", "/themes"]:
     assert f"$path==='{route}'" in INDEX, f"route missing: {route}"
 
