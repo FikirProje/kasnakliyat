@@ -17,10 +17,18 @@ function row(string $sql, array $params = []): ?array { return query($sql, $para
 function setting(string $key, string $default = ''): string {
     static $defaults;
     $defaults ??= is_file(ROOT . '/config/site.php') ? require ROOT . '/config/site.php' : [];
+    // A partially restored/new database may not have reached migration 1 yet.
+    // Settings are optional at bootstrap; never turn the diagnostic/install
+    // path into a second exception while trying to render an error page.
+    $table = db()->query("SELECT 1 FROM sqlite_master WHERE type='table' AND name='settings'")->fetchColumn();
+    if (!$table) return (string)($defaults[$key] ?? $default);
     $r = row('SELECT value FROM settings WHERE key=?', [$key]);
     return $r ? (string)$r['value'] : (string)($defaults[$key] ?? $default);
 }
-function save_setting(string $key, string $value): void { query('INSERT INTO settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value', [$key, $value]); }
+function save_setting(string $key, string $value): void {
+    db()->exec('CREATE TABLE IF NOT EXISTS settings(key TEXT PRIMARY KEY,value TEXT NOT NULL)');
+    query('INSERT INTO settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value', [$key, $value]);
+}
 function migrate(): void {
     db()->exec('CREATE TABLE IF NOT EXISTS migrations(version INTEGER PRIMARY KEY, applied_at TEXT NOT NULL)');
     if (row('SELECT version FROM migrations WHERE version=1')) { migrate_extensions(); return; }
