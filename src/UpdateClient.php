@@ -28,8 +28,10 @@ function update_archive_copy(string $source,string $destination): void
     $it=new RecursiveIteratorIterator(new RecursiveDirectoryIterator($source,FilesystemIterator::SKIP_DOTS),RecursiveIteratorIterator::SELF_FIRST);
     foreach($it as $item){$rel=str_replace('\\','/',substr($item->getPathname(),strlen($source)+1));if($rel===''||str_starts_with($rel,'storage/')||$rel==='.env')continue;$target=$destination.'/'.$rel;if($item->isDir()){if(!is_dir($target))mkdir($target,0700,true);}else{if(!is_dir(dirname($target)))mkdir(dirname($target),0700,true);copy($item->getPathname(),$target);}}
 }
-function update_apply(string $version): string
+function update_apply(string $version,string $minPhp='',int $migrationRequired=0): string
 {
+    if($minPhp!==''&&version_compare(PHP_VERSION,$minPhp,'<'))throw new RuntimeException('Bu güncelleme PHP '.$minPhp.' veya üzerini gerektiriyor.');
+    $currentMigration=(int)setting('migration_version',envv('MIGRATION_VERSION','1')); if($migrationRequired>0&&$currentMigration<$migrationRequired)throw new RuntimeException('Bu paket için gereken migration sürümü mevcut değil.');
     $zipPath=storage_path('update-'.$version.'.zip'); if(!is_file($zipPath))throw new RuntimeException('Önce güncelleme paketini indirin.');
     $staging=storage_path('update-staging-'.$version); $rollback=storage_path('update-rollback-'.$version); if(is_dir($staging))integration_remove_tree($staging);if(is_dir($rollback))throw new RuntimeException('Bu sürüm için geri alma kaydı zaten mevcut.');
     $zip=new ZipArchive();if($zip->open($zipPath)!==true)throw new RuntimeException('Güncelleme ZIP dosyası açılamadı.');

@@ -345,8 +345,8 @@ function admin_post(string $section, array $user): void
         $path=update_download(['version'=>$version,'sha256'=>$sha]); audit('update.downloaded',$version); flash('success','Paket indirildi ve SHA-256 doğrulandı: '.basename($path).'. Uygulama adımı henüz başlatılmadı; önce yedek alın.'); return;
     }
     if ($section === 'updates' && $action === 'apply_update') {
-        $version=admin_input('version',40); if(!preg_match('/^\d+(?:\.\d+){1,3}(?:[-+][A-Za-z0-9.-]+)?$/',$version)) throw new InvalidArgumentException('Güncelleme sürümü geçersiz.');
-        $backup=update_apply($version); flash('success','Güncelleme uygulandı. Veri yedeği: '.basename($backup)); return;
+        $version=admin_input('version',40); $check=update_check(true); $release=is_array($check['update']??null)?$check['update']:null; if(!$release||($release['version']??'')!==$version)throw new InvalidArgumentException('Sürüm yeniden doğrulanamadı; tekrar kontrol edin.'); $minPhp=(string)($release['min_php']??''); $migration=(int)($release['migration_version']??0); if(!preg_match('/^\d+(?:\.\d+){1,3}(?:[-+][A-Za-z0-9.-]+)?$/',$version)) throw new InvalidArgumentException('Güncelleme sürümü geçersiz.');
+        $backup=update_apply($version,$minPhp,$migration); flash('success','Güncelleme uygulandı. Veri yedeği: '.basename($backup)); return;
     }
     if ($section === 'licenses' && $action === 'license') {
         $server=admin_input('license_server_url',300); $key=admin_input('license_key',100);
