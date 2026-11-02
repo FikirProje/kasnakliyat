@@ -1,6 +1,6 @@
 # Marketplace release checklist
 
-This repository can be deployed as a branded Kaş Nakliyat site. Before offering a generic copy for sale, create a clean release branch and complete every item below.
+This repository is the neutral TofiDesk transport CMS release profile. Customer-specific branding belongs in a separate deployment profile and must not be included in the marketplace archive.
 
 ## Do not ship customer material
 
@@ -11,8 +11,8 @@ This repository can be deployed as a branded Kaş Nakliyat site. Before offering
 ## Buyer installation
 
 1. Upload the archive with `public/` as the web root.
-2. Copy `.env.example` to `.env`, set `APP_URL`, `APP_ENV=production` and a 32+ character `INSTALL_TOKEN`.
-3. Open `/install`, enter the business name and create the first administrator. The installer is English and closes after the first account.
+2. Copy `.env.example` to `.env`, set `APP_URL` and `APP_ENV=production`.
+3. Open `/install`, select the installer language, enter the business identity and create the first administrator. The installer closes after the first account.
 4. In the administration panel, enter contact details, logo assets, social links, legal text, services, galleries and SMTP settings.
 5. Add `AI_API_KEY` only when AI features are wanted. Configure the worker with `php bin/worker.php all` every minute.
 
@@ -26,4 +26,4 @@ This repository can be deployed as a branded Kaş Nakliyat site. Before offering
 
 ## Current product boundary
 
-The public site has 14 built-in interface languages. The installer is English. The administration interface is currently Turkish, and IMAP inbox synchronization is not included. These need completion before marketing the product as a fully multilingual administration suite with inbound email management.
+The public site and installer have 14 built-in interface languages. Provider credentials and live payment accounts remain deployment-specific.

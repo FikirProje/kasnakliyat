@@ -1,63 +1,30 @@
-KAŞ NAKLİYAT — SUNUCUYA YÜKLEME
+TOFIDESK — SUNUCUYA YÜKLEME
 
-1. Sunucuda PHP 8.2 veya üzeri seçin. PDO SQLite, mbstring, fileinfo,
-   cURL, OpenSSL ve GD/WebP eklentilerini etkinleştirin.
+1. PHP 8.2 veya üzerini seçin. PDO SQLite, mbstring, fileinfo, cURL,
+   OpenSSL, GD/WebP ve zlib eklentilerini etkinleştirin.
 
-2. Paketi sitenizin uygulama klasörüne açın. Alan adının belge kökünü
-   bu klasörün içindeki public klasörü yapın.
-   Örnek: /home/hesap/kasnakliyat/public
-   Uygulamanın tamamını doğrudan herkese açık köke koymayın.
-   Depolama için storage klasörüne PHP kullanıcısının yazabilmesi gerekir.
-   Apache yeniden yazım ayarları public/.htaccess içinde; Nginx örneği
-   docs/nginx.conf içindedir.
+2. ZIP'i uygulama klasörüne açın. Alan adının belge kökünü bu klasörün
+   içindeki public klasörüne yönlendirin. cPanel/Plesk'te uygulama dosyaları
+   httpdocs dışında, yalnız public/ web kökü olacak şekilde yapılandırılabilir.
+   storage/ dizini PHP kullanıcısı tarafından yazılabilir olmalıdır.
 
-3. .env.example dosyasını .env adıyla kopyalayın. En az şunları düzenleyin:
-   APP_URL=https://gercek-alan-adiniz.com
+3. .env.example dosyasını .env olarak kopyalayın ve en az şunları ayarlayın:
+   APP_URL=https://example.com
    APP_ENV=production
-   INSTALL_TOKEN=kendinize-ozel-rastgele-en-az-32-karakterlik-gizli-anahtar
-   Kurulum anahtarını örnekteki metinle bırakmayın; kendinize özel üretin.
-   SSL sertifikasının çalıştığından emin olun. Alan adınız henüz hazır değilse
-   kurulum ekranı eriştiğiniz adresi otomatik algılar; canlıya geçmeden önce
-   APP_URL değerini gerçek HTTPS alan adınızla sabitleyin.
+   Kurulum tokensızdır; ilk yönetici oluşturulduktan sonra /install otomatik kapanır.
 
-4. Alan adınızda /install adresini açın. Sistem sunucu kontrollerini gösterir.
-   Yönetici e-postası: info@kasnakliyat.com
-   Kendi güçlü parolanızı belirleyin ve .env dosyasındaki kurulum anahtarını
-   forma girin. Yönetici oluştuğunda kurulum ekranı otomatik kapanır.
-   Sonra .env dosyasından INSTALL_TOKEN satırını kaldırın.
-   Yönetim paneli: /admin/login
+4. /install adresini açın. Sunucu kontrollerini tamamlayın, kurulum dilini,
+   ülke/işletme bilgilerini ve ilk yönetici parolasını girin. Yönetim paneli:
+   /admin/login
 
-5. İletişim bilgileri tanımlıdır:
-   +90 505 219 43 46
-   bilgi@kasnakliyat.com
-   Bayındır Mh. Ağalar Sk. No:25 Kaş / Antalya
-   Panelden bunları düzenleyebilirsiniz. Yasal işletme bilgilerinizi ve
-   gizlilik metinlerinizi yayından önce tamamlayın.
+5. SMTP, AI, SMS/WhatsApp ve ödeme sağlayıcılarını yalnızca yönetim panelinden
+   veya sunucunun özel ortam değişkenlerinden yapılandırın. Gerçek sırları ZIP'e,
+   Git'e veya destek mesajlarına yazmayın.
 
-6. Yapay zekâ için AI_API_KEY; e-posta için SMTP_HOST, SMTP_PORT,
-   SMTP_USER, SMTP_PASSWORD, SMTP_FROM değerlerini güvenli sunucu
-   ortamınıza/.env dosyanıza girin. Bunları sohbet veya Git ile paylaşmayın.
-   Kuyruklar için her dakika şu komutu zamanlayın:
+6. Worker görevleri için cron:
    php /uygulamanin/tam/yolu/bin/worker.php all
-   Günlük yedek için:
+   Yedek için:
    php /uygulamanin/tam/yolu/bin/console.php backup
 
-7. İlk yayında gerçek teklif/randevu oluşturup panelde kontrol edin.
-   SMTP kuyruğunun Gönderildi olduğunu ve gerçek alıcıya ulaştığını
-   doğrulayın. API/SMTP bilgileri verilmeden dış gönderimler denenmedi.
-
-Bu paket canlı müşteri verisi, yönetici parolası, API anahtarı veya
-yerel geliştirme veritabanı içermez. İlk yönetici hesabını kendi
-sunucunuzda siz oluşturursunuz. Ayrıntılar README.md dosyasındadır.
-
-8. UZAK MASAÜSTÜ VE VS CODE
-   Başka bir bilgisayarda geliştirmek için:
-   git clone https://github.com/FikirProje/kasnakliyat.git
-   cd kasnakliyat
-   cp .env.example .env
-   php bin/console.php migrate
-   php bin/console.php check
-   Windows'ta VS Code + Remote - SSH eklentisiyle uzak proje klasörünü açın.
-   Her başlanıçta git pull --ff-only, geliştirme sonunda testlerden sonra
-   git push origin main kullanın. .env, storage/, yedekler, veritabanı ve
-   API/SMTP anahtarları Git'e eklenmez.
+7. Yayına almadan önce admin girişini, 14 dili, RTL dilleri, SMTP testini,
+   sitemap/robots, lisans aktivasyonunu ve yedek geri yüklemeyi kontrol edin.
