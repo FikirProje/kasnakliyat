@@ -3,6 +3,7 @@ declare(strict_types=1);
 function preflight_requirements_page(): void {
     $required = ['pdo_sqlite' => 'PDO SQLite', 'sqlite3' => 'SQLite3', 'curl' => 'cURL', 'openssl' => 'OpenSSL', 'mbstring' => 'mbstring', 'fileinfo' => 'fileinfo', 'gd' => 'GD/WebP'];
     $missing = [];
+    if (version_compare(PHP_VERSION, '8.2.0', '<')) $missing[] = 'PHP 8.2+ (mevcut: '.PHP_VERSION.')';
     foreach ($required as $extension => $label) if (!extension_loaded($extension)) $missing[] = $label;
     if (!$missing) {
         $storage = dirname(__DIR__) . '/storage';
