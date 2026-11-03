@@ -17,7 +17,7 @@ ob_start(static function(string $html):string {
         $options .= '<option value="?lang='.$code.'"'.($current === $code ? ' selected' : '').'>'.$name.'</option>';
     }
     $html = preg_replace('#<nav class="langs">.*?</nav>#s', '<nav class="langs"><label class="sr-only">Language</label><select onchange="if(this.value)location.href=this.value">'.$options.'</select></nav>', $html) ?? $html;
-    $html = str_replace('</style>', '.langs{display:flex;justify-content:flex-end}.langs select{font:600 13px Inter,system-ui,sans-serif;color:#08283a;background:#fff;border:1px solid #cbdad8;border-radius:8px;padding:9px 28px 9px 10px;min-width:130px}.langs select:focus{outline:2px solid #087f8c60}.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}', $html);
+    $html = str_replace('</style>', '.langs{display:flex;justify-content:flex-end}.langs select{font:600 13px Inter,system-ui,sans-serif;color:#08283a;background:#fff;border:1px solid #cbdad8;border-radius:8px;padding:9px 28px 9px 10px;min-width:130px}.langs select:focus{outline:2px solid #087f8c60}.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}</style>', $html);
     return $html;
 });
 $checks=li_requirements();$errors=array_keys(array_filter($checks,static fn(bool $ok):bool=>!$ok));if($errors)li_html(li_t('requirements'),'<p class="bad">'.htmlspecialchars(li_t('resolve'),ENT_QUOTES,'UTF-8').'</p><ul>'.implode('',array_map(static fn(string $name):string=>'<li class="bad">✗ '.htmlspecialchars($name,ENT_QUOTES,'UTF-8').'</li>',$errors)).'</ul>');
