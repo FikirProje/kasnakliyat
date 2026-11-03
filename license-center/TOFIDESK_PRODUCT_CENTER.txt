@@ -1,0 +1,8 @@
+TOFIDESK PRODUCT CENTER
+
+This archive is for product.tofidesk.com only.
+It contains the product storefront, theme sales, buyer accounts, licence management,
+release/update administration and support centre.
+
+It is NOT the Kas Nakliyat application and must not contain src/, templates/ or config/site.php.
+Extract the archive directly into the product.tofidesk.com httpdocs document root.
