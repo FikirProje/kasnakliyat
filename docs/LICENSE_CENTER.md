@@ -1,6 +1,6 @@
 # TofiDesk licence centre
 
-Deploy `license-center/` separately at `https://tofidesk.com/transportation`. It is not included in the buyer archive. The buyer archive contains the client panel at `/admin/licenses`.
+Deploy `license-center/` separately at `https://product.tofidesk.com`. It is the complete product sales, theme sales, buyer account and licence centre. The buyer archive contains only the installed CMS client panel at `/admin/licenses`.
 
 1. Put the licence centre behind HTTPS and set its database path outside the web root.
 2. Create the first centre administrator through the one-time installation URL.
