@@ -6,6 +6,7 @@ import socket
 import subprocess
 import tempfile
 import time
+import urllib.error
 import urllib.request
 from pathlib import Path
 
@@ -32,11 +33,25 @@ with tempfile.TemporaryDirectory(prefix='tofidesk-installer-') as directory:
         reserve.bind(('127.0.0.1', 0))
         port = reserve.getsockname()[1]
     command = php_flags + ['-S', f'127.0.0.1:{port}', '-t', str(ROOT / 'license-center' / 'public')]
-    process = subprocess.Popen(command, cwd=ROOT, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    server_log = temp / 'server.log'
+    with server_log.open('wb') as log:
+        process = subprocess.Popen(command, cwd=ROOT, env=env, stdout=log, stderr=log)
     try:
-        time.sleep(0.7)
+        base_url = f'http://127.0.0.1:{port}'
+        deadline = time.monotonic() + 10
+        while time.monotonic() < deadline:
+            if process.poll() is not None:
+                raise RuntimeError(f'installer runtime server exited: {server_log.read_text(errors="replace")[-2000:]}')
+            try:
+                with urllib.request.urlopen(f'{base_url}/installer.php?lang=tr', timeout=2) as response:
+                    if response.status == 200:
+                        break
+            except (OSError, urllib.error.URLError):
+                time.sleep(0.1)
+        else:
+            raise RuntimeError(f'installer runtime server did not become ready: {server_log.read_text(errors="replace")[-2000:]}')
         for locale in locales:
-            with urllib.request.urlopen(f'http://127.0.0.1:{port}/installer.php?lang={locale}', timeout=10) as response:
+            with urllib.request.urlopen(f'{base_url}/installer.php?lang={locale}', timeout=10) as response:
                 html = response.read().decode('utf-8', 'replace')
             if response.status != 200 or f'<html lang="{locale}"' not in html or '<form method="post">' not in html:
                 raise RuntimeError(f'installer runtime failed for {locale}: {response.status}')
