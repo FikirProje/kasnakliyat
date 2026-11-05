@@ -1,0 +1,69 @@
+name: TofiDesk quality gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: curl, fileinfo, gd, mbstring, openssl, pdo_sqlite, sqlite3, zip
+          coverage: none
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: PHP test suite
+        shell: bash
+        run: |
+          set -euo pipefail
+          for test_file in tests/*.php; do
+            php "$test_file"
+          done
+
+      - name: Python contract suite
+        shell: bash
+        run: |
+          set -euo pipefail
+          for test_file in \
+            tests/admin_surface_contract.py \
+            tests/deployment_archive_contract.py \
+            tests/goal_acceptance_contract.py \
+            tests/installer_runtime_coverage.py \
+            tests/license_center_install_path_contract.py \
+            tests/license_center_runtime_locale_coverage.py \
+            tests/platform_api_contract.py \
+            tests/platform_audit_smoke.py \
+            tests/product_center_surface_contract.py \
+            tests/release_audit.py; do
+            python "$test_file"
+          done
+
+      - name: HTTP smoke suite
+        env:
+          PHP_BIN: php
+        run: python -u tests/smoke.py
+
+      - name: Marketplace package integrity
+        run: |
+          python bin/package.py --profile marketplace --output "$RUNNER_TEMP/tofidesk-marketplace.zip"
+          python tests/deployment_archive_contract.py
+
+      - name: Check whitespace
+        run: git diff --check
