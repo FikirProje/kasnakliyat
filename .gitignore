@@ -15,5 +15,7 @@ __pycache__/
 /outputs/*-script-check.zip
 /outputs/market-a.zip
 /outputs/market-b.zip
+/outputs/product-tofidesk-license-center-*.zip
 /outputs/product-tofidesk-product-center.zip
 /outputs/tofidesk-*.zip
+/work/
