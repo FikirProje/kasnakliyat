@@ -5,3 +5,13 @@
 /kasnakliyat-*.zip
 /tests/.output/
 /.DS_Store
+*.log
+__pycache__/
+*.pyc
+/--help
+/outputs/*-filezilla*/
+/outputs/*-script-check.zip
+/outputs/market-a.zip
+/outputs/market-b.zip
+/outputs/product-tofidesk-product-center.zip
+/outputs/tofidesk-*.zip
