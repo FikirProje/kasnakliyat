@@ -37,25 +37,39 @@ jobs:
             php "$test_file"
           done
 
-      - name: Python contract suite
+      - name: Python admin surface contract
+        run: python tests/admin_surface_contract.py
+
+      - name: Python deployment archive contract
+        run: python tests/deployment_archive_contract.py
+
+      - name: Python goal acceptance contract
+        run: python tests/goal_acceptance_contract.py
+
+      - name: Python installer runtime coverage
         env:
           PHP_BIN: php
-        shell: bash
-        run: |
-          set -euxo pipefail
-          for test_file in \
-            tests/admin_surface_contract.py \
-            tests/deployment_archive_contract.py \
-            tests/goal_acceptance_contract.py \
-            tests/installer_runtime_coverage.py \
-            tests/license_center_install_path_contract.py \
-            tests/license_center_runtime_locale_coverage.py \
-            tests/platform_api_contract.py \
-            tests/platform_audit_smoke.py \
-            tests/product_center_surface_contract.py \
-            tests/release_audit.py; do
-            python "$test_file"
-          done
+        run: python tests/installer_runtime_coverage.py
+
+      - name: Python Product Center install path contract
+        run: python tests/license_center_install_path_contract.py
+
+      - name: Python Product Center runtime locale coverage
+        env:
+          PHP_BIN: php
+        run: python tests/license_center_runtime_locale_coverage.py
+
+      - name: Python platform API contract
+        run: python tests/platform_api_contract.py
+
+      - name: Python platform audit
+        run: python tests/platform_audit_smoke.py
+
+      - name: Python Product Center surface contract
+        run: python tests/product_center_surface_contract.py
+
+      - name: Python release audit
+        run: python tests/release_audit.py
 
       - name: HTTP smoke suite
         env:
