@@ -25,6 +25,29 @@ Sunucuya ZIP yükleyerek tarayıcıdan ilk kurulum yapmak için [KURULUM.txt](KU
 
 Bu görev zaten yalıtılmıştır. Mevcut checkout'u kullanın; kullanıcı özellikle istemedikçe Git worktree oluşturmayın.
 
+## Başka bilgisayarda devam
+
+Güncel kaynak kodu GitHub'dan alın:
+
+```sh
+git clone https://github.com/FikirProje/kasnakliyat.git
+cd kasnakliyat
+git pull origin main
+```
+
+Yerel önizleme için XAMPP/Apache yerine doğrudan PHP built-in sunucusu da
+kullanılabilir. Kas uygulaması `127.0.0.1:8080`, Product Center ise
+`127.0.0.1:8090` üzerinde çalışır; bu adresler yalnızca çalıştıran bilgisayarda
+görünür. Hazır dağıtım paketleri `outputs/` altında ayrıdır:
+
+- `product-tofidesk-app-deployment.zip`: müşteri Kas Nakliyat uygulaması/demo paketi.
+- `product-tofidesk-marketplace.zip`: genel sektörler için marketplace uygulaması.
+- `product-tofidesk-license-center.zip`: Product Center katalog, satış ve lisans merkezi.
+
+Plesk/FileZilla yükleme eşlemesi için
+[`docs/FILEZILLA_FINAL_UPLOAD.md`](docs/FILEZILLA_FINAL_UPLOAD.md) dosyasını
+izleyin. Paketler birbirinin içine birleştirilmemelidir.
+
 ## Kullanım
 
 - `/tr/`: gerçek teklif formu içeren One Page ana sayfa. Türkçe, İngilizce, Almanca, Fransızca, İspanyolca, İtalyanca, Portekizce, Hollandaca, Rusça, Arapça, Çince, Japonca, Korece ve Farsça arayüz. Arapça/Farsça RTL.
