@@ -6,6 +6,7 @@ import re
 import subprocess
 import tempfile
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 import shutil
@@ -14,6 +15,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PHP = os.environ.get("PHP_BIN") or shutil.which("php") or r"C:\xampp\php\php.exe"
+if PHP and not Path(PHP).is_file():
+    PHP = shutil.which(PHP)
 if not Path(PHP).is_file():
     raise SystemExit("PHP_BIN is required for license-centre runtime coverage")
 
