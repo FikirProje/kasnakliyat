@@ -38,6 +38,8 @@ jobs:
           done
 
       - name: Python contract suite
+        env:
+          PHP_BIN: php
         shell: bash
         run: |
           set -euo pipefail
