@@ -9,6 +9,8 @@
 __pycache__/
 *.pyc
 /--help
+/integration-debug.txt
+/outputs/filezilla-*/
 /outputs/*-filezilla*/
 /outputs/*-script-check.zip
 /outputs/market-a.zip
