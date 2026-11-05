@@ -12,6 +12,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PHP = os.environ.get('PHP_BIN') or shutil.which('php')
+if PHP and not Path(PHP).is_file():
+    PHP = shutil.which(PHP)
 if not PHP or not Path(PHP).is_file():
     raise SystemExit('PHP_BIN is required for installer runtime coverage')
 
