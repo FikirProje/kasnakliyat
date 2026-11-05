@@ -3,7 +3,10 @@ from pathlib import Path
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
-ARCHIVE = Path(__file__).resolve().parents[3] / "outputs" / "product-tofidesk-marketplace.zip"
+ARCHIVE = ROOT / "outputs" / "product-tofidesk-marketplace.zip"
+if not ARCHIVE.is_file():
+    # Backwards-compatible path for the historical nested workspace layout.
+    ARCHIVE = Path(__file__).resolve().parents[3] / "outputs" / "product-tofidesk-marketplace.zip"
 BOOTSTRAP = (ROOT / "src" / "bootstrap.php").read_text(encoding="utf-8")
 PUBLIC_LAYOUT = (ROOT / "templates" / "public" / "layout.php").read_text(encoding="utf-8")
 assert "style-src 'self' 'nonce-" in BOOTSTRAP and "unsafe-inline" not in BOOTSTRAP, "CSP policy is unsafe or missing nonce"
