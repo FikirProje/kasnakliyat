@@ -42,7 +42,7 @@ jobs:
           PHP_BIN: php
         shell: bash
         run: |
-          set -euo pipefail
+          set -euxo pipefail
           for test_file in \
             tests/admin_surface_contract.py \
             tests/deployment_archive_contract.py \
