@@ -1,0 +1,33 @@
+{
+  "slug": "restaurant-pack",
+  "name": "Restaurant and food service pack",
+  "version": "1.0.0",
+  "kind": "sector",
+  "requires": {"tofidesk": ">=1.0.0", "php": ">=8.2"},
+  "content_types": ["restaurant", "menu", "dish", "reservation"],
+  "taxonomies": ["cuisine", "dietary_option", "meal_period"],
+  "fields": {
+    "restaurant": [
+      {"slug": "address", "label": "Address", "field_type": "location"},
+      {"slug": "phone", "label": "Phone", "field_type": "text"},
+      {"slug": "opening_hours", "label": "Opening hours", "field_type": "json"}
+    ],
+    "dish": [
+      {"slug": "price", "label": "Price", "field_type": "number", "config": {"min": 0}},
+      {"slug": "allergens", "label": "Allergens", "field_type": "json"},
+      {"slug": "image", "label": "Image", "field_type": "media"}
+    ],
+    "reservation": [
+      {"slug": "party_size", "label": "Party size", "field_type": "number", "config": {"min": 1}},
+      {"slug": "reservation_date", "label": "Reservation date", "field_type": "datetime"}
+    ]
+  },
+  "hooks": ["content.saved", "search.reindex", "booking.created"],
+  "permissions": ["restaurant.manage", "menu.manage", "reservation.manage"],
+  "translations": ["tr", "en", "de", "fr", "es", "it", "pt", "nl", "ru", "ar", "fa", "zh", "ja", "ko"],
+  "license": "commercial",
+  "settings": {
+    "menu_rules": {"label": "Menu rules", "description": "Localized menus, allergens and dietary labels.", "default": {"show_allergens": true, "show_prices": true}},
+    "reservation_rules": {"label": "Reservation rules", "description": "Table capacity, lead time and opening hours.", "default": {"lead_hours": 2, "capacity": 1}}
+  }
+}

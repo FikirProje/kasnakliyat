@@ -32,6 +32,17 @@ import xml.etree.ElementTree as ET
 ROOT = Path(__file__).resolve().parents[1]
 LOCALES = "tr en de fr es it pt nl ru ar zh ja ko fa".split()
 PHP = os.environ.get("PHP_BIN") or shutil.which("php") or "/workspace/.runtime/bin/php"
+PHP_FLAGS: list[str] = ["-d", "display_startup_errors=0", "-d", "display_errors=0"]
+if os.name == "nt":
+    sqlite_extension = Path(PHP).resolve().parent / "ext" / "php_sqlite3.dll"
+    if sqlite_extension.is_file():
+        PHP_FLAGS += ["-d", f"extension={sqlite_extension}"]
+    pdo_sqlite_extension = Path(PHP).resolve().parent / "ext" / "php_pdo_sqlite.dll"
+    if pdo_sqlite_extension.is_file():
+        PHP_FLAGS += ["-d", f"extension={pdo_sqlite_extension}"]
+    gd_extension = Path(PHP).resolve().parent / "ext" / "php_gd.dll"
+    if gd_extension.is_file():
+        PHP_FLAGS += ["-d", f"extension={gd_extension}"]
 
 
 class Browser:
@@ -40,8 +51,8 @@ class Browser:
         self.cookies = http.cookiejar.CookieJar()
         self.opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(self.cookies))
 
-    def request(self, path: str, data: dict | None = None, *, files: dict | None = None):
-        headers = {}
+    def request(self, path: str, data: dict | None = None, *, files: dict | None = None, json_data: dict | None = None, headers: dict | None = None):
+        headers = dict(headers or {})
         payload = None
         if files:
             boundary = "----kas-smoke-" + secrets.token_hex(12)
@@ -53,6 +64,9 @@ class Browser:
             pieces += [f"--{boundary}--\r\n".encode()]
             payload = b"".join(pieces)
             headers["Content-Type"] = "multipart/form-data; boundary=" + boundary
+        elif json_data is not None:
+            payload = json.dumps(json_data, ensure_ascii=False).encode()
+            headers["Content-Type"] = "application/json"
         elif data is not None:
             payload = urllib.parse.urlencode(data, doseq=True).encode()
             headers["Content-Type"] = "application/x-www-form-urlencoded"
@@ -83,7 +97,7 @@ class Smoke:
             self.port = reserve.getsockname()[1]
         self.base = f"http://127.0.0.1:{self.port}"
         self.env = os.environ.copy()
-        self.env.update(APP_ENV="testing", APP_URL=self.base, STORAGE_PATH=str(self.temp / "storage"), DB_PATH=str(self.temp / "app.sqlite"), AI_API_KEY="", SMTP_HOST="", SMTP_USER="", SMTP_PASSWORD="", SMTP_FROM="", INSTALL_TOKEN="")
+        self.env.update(APP_ENV="testing", APP_URL=self.base, STORAGE_PATH=str(self.temp / "storage"), DB_PATH=str(self.temp / "app.sqlite"), AI_API_KEY="", SMTP_HOST="", SMTP_USER="", SMTP_PASSWORD="", SMTP_FROM="", INSTALL_TOKEN="", PLATFORM_API_TOKEN="p" * 48)
         self.password = secrets.token_urlsafe(24)
         self.env["SMOKE_PASSWORD"] = self.password
         self.server = None
@@ -97,7 +111,7 @@ class Smoke:
 
     def php(self, code: str) -> str:
         source = "<?php require " + json.dumps(str(ROOT / "src/bootstrap.php")) + ";\n" + code
-        result = subprocess.run([PHP], input=source, capture_output=True, text=True, env=self.env, cwd=ROOT, timeout=45)
+        result = subprocess.run([PHP, *PHP_FLAGS], input=source, capture_output=True, text=True, env=self.env, cwd=ROOT, timeout=45)
         assert result.returncode == 0, f"PHP subprocess failed ({result.returncode}): {result.stderr[-1500:]}"
         return result.stdout
 
@@ -110,9 +124,9 @@ class Smoke:
     def start(self, provision_users=True):
         self.php("migrate(); migrate();")
         if provision_users:
-            self.php("foreach(['admin','editor','operator'] as $role) { query('INSERT INTO users(name,email,password_hash,role) VALUES(?,?,?,?)', [ucfirst($role), $role.'@example.test',password_hash(getenv('SMOKE_PASSWORD'),PASSWORD_DEFAULT),$role]); }")
+            self.php("foreach(['admin','editor','operator'] as $role) { query('INSERT INTO users(name,email,password_hash,role) VALUES(?,?,?,?)', [ucfirst($role), $role.'@example.test',password_hash(getenv('SMOKE_PASSWORD'),PASSWORD_DEFAULT),$role]); } platform_upsert_form('api-contact','tr','API contact'); platform_add_form_field((int)row(\"SELECT id FROM platform_forms WHERE slug='api-contact' AND locale='tr'\")['id'], ['slug'=>'email','label'=>'Email','field_type'=>'email','required'=>true]);")
         self.log = open(self.temp / "server.log", "wb")
-        self.server = subprocess.Popen([PHP, "-S", f"127.0.0.1:{self.port}", "-t", "public", "public/index.php"], cwd=ROOT, env=self.env, stdout=self.log, stderr=self.log)
+        self.server = subprocess.Popen([PHP, *PHP_FLAGS, "-S", f"127.0.0.1:{self.port}", "-t", "public", "public/index.php"], cwd=ROOT, env=self.env, stdout=self.log, stderr=self.log)
         deadline = time.monotonic() + 10
         while time.monotonic() < deadline:
             if self.server.poll() is not None:
@@ -179,6 +193,54 @@ class Smoke:
         status, robots, _, _ = self.browser.get("/robots.txt")
         assert status == 200 and (b"Disallow: /admin" in robots or b"Disallow: /\n" in robots), "robots development/admin exclusion"
 
+    def platform_api(self):
+        status, body, headers, _ = self.browser.get("/api/platform/v1/modules")
+        assert status == 200 and headers.get("X-TofiDesk-API-Version") == "1", f"platform modules API: {status}"
+        modules = json.loads(body)
+        assert any(item["slug"] == "transport-pack" for item in modules["items"]), "transport module missing from API"
+        transport = next(item for item in modules["items"] if item["slug"] == "transport-pack")
+        assert "quote.manage" in transport["permissions"] and "content.saved" in transport["hooks"] and transport["requires"]["php"] == ">=8.2", "module capability metadata missing"
+        assert "quote_workflow" in transport["settings"], "module settings schema missing"
+        status, body, _, _ = self.browser.get("/api/platform/v1/locations?country=TR&level=country")
+        assert status == 200 and any(item["country_code"] == "TR" for item in json.loads(body)["items"]), "location API missing TR"
+        status, body, _, _ = self.browser.get("/api/platform/v1/search?lang=tr&limit=1")
+        assert status == 200 and "facets" in json.loads(body), "search API facets missing"
+        status, body, _, _ = self.browser.get("/api/platform/v1/schema?type=listing")
+        assert status == 200 and json.loads(body)["type"] == "listing", "content schema API missing"
+        status, body, _, _ = self.browser.get("/api/platform/v1/menus?slug=primary&lang=tr")
+        assert status == 200 and json.loads(body)["total"] >= 0, "menu API missing"
+        status, body, _, _ = self.browser.get("/api/platform/v1/discovery/related?type=listing&id=42&lang=tr")
+        assert status == 200 and "items" in json.loads(body), "related discovery API missing"
+        status, body, _, _ = self.browser.get("/api/platform/v1/discovery/reviews?type=listing&id=42")
+        assert status == 200 and json.loads(body)["total"] == 0, "review moderation API leaked pending data"
+        status, _, _, _ = self.browser.request("/api/platform/v1/modules", {"x": "1"})
+        assert status == 401, f"public API write method was not rejected: {status}"
+
+    def platform_api_write(self):
+        status, body, _, _ = self.browser.request(
+            "/api/platform/v1/forms/submit",
+            json_data={"slug": "api-contact", "lang": "tr", "values": {"email": "api@example.test"}},
+            headers={"X-TofiDesk-API-Key": "wrong-token"},
+        )
+        assert status == 401 and json.loads(body)["error"] == "invalid_api_token", "invalid REST token was accepted"
+        status, body, _, _ = self.browser.request(
+            "/api/platform/v1/forms/submit",
+            json_data={"slug": "api-contact", "lang": "tr", "values": {"email": "api@example.test"}},
+            headers={"X-TofiDesk-API-Key": "p" * 48},
+        )
+        payload = json.loads(body)
+        assert status == 201 and payload["status"] == "received" and int(payload["submission_id"]) > 0, "authenticated REST form submission failed"
+        assert self.sql("SELECT count(*) n FROM platform_form_submissions WHERE id=?", (payload["submission_id"],))[0]["n"] == 1, "REST submission was not persisted"
+
+    def theme_preview(self):
+        for locale in LOCALES:
+            status, body, _, _ = self.browser.get(f"/{locale}/tema-onizleme/")
+            html = body.decode()
+            assert status == 200, f"{locale} theme preview: {status}"
+            assert f'<html lang="{locale}"' in html, f"{locale} preview language missing"
+            assert 'td-section-hero' in html and 'td-section-feature_grid' in html, f"{locale} preview sections missing"
+            assert 'td-theme-nexa-business' in html, f"{locale} preview manifest not rendered"
+
     def protected_storage(self):
         for path in ("/.env", "/src/bootstrap.php", "/storage/app.sqlite", "/.git/config", "/bin/console.php"):
             status, body, _, _ = self.browser.get(path)
@@ -237,6 +299,27 @@ class Smoke:
     def auth_roles(self):
         for browser, role in ((self.admin, "admin"), (self.editor, "editor"), (self.operator, "operator")):
             self.login(browser, role)
+        # Render a real authenticated admin screen in every supported locale.
+        # This catches translations that exist in a dictionary but are bypassed
+        # by a route/layout branch.
+        admin_id = self.sql("SELECT id FROM users WHERE email='admin@example.test'")[0]["id"]
+        for locale in LOCALES:
+            # Do not open a second PHP process while the single-threaded
+            # built-in server is serving requests. On Windows that can leave
+            # SQLite waiting on the server's connection indefinitely.
+            self.sql("INSERT INTO user_preferences(user_id,preference_key,preference_value,updated_at) VALUES(?,?,?,datetime('now')) ON CONFLICT(user_id,preference_key) DO UPDATE SET preference_value=excluded.preference_value,updated_at=datetime('now')", (admin_id, "admin_locale", locale))
+            status, body, _, _ = self.admin.get("/admin/settings")
+            html = body.decode()
+            assert status == 200 and f'<html lang="{locale}"' in html, f"admin {locale} render: {status}"
+            if locale != "tr":
+                assert "İşletme ve Entegrasyonlar" not in html and "Marka ve iletişim" not in html, f"Turkish admin copy leaked in {locale}"
+            for route in ("/admin", "/admin/requests", "/admin/appointments", "/admin/content", "/admin/media", "/admin/seo", "/admin/settings", "/admin/security", "/admin/email-templates", "/admin/notification-rules", "/admin/integrations", "/admin/users", "/admin/jobs", "/admin/audit", "/admin/backup", "/admin/mail", "/admin/languages", "/admin/themes", "/admin/licenses", "/admin/updates", "/admin/modules", "/admin/plugins", "/admin/menus", "/admin/forms", "/admin/legal"):
+                code, page, _, _ = self.admin.get(route)
+                rendered = page.decode("utf-8", "replace")
+                assert code == 200 and f'<html lang="{locale}"' in rendered, f"admin {locale}{route}: {code}"
+                if locale != "tr":
+                    for leaked in ("İşletme ve Entegrasyonlar", "Marka ve iletişim", "Yeni içerik oluştur", "Güvenli güncelleme", "Yasal metinler", "Sunucu ön kontrolü", "Gerçek görsellerden galeri oluşturun", "Marka ve Ana Görsel", "Yasal metinleri kaydet", "Public bağlantılar", "Lisans anahtarı", "Yapay zekâ sağlayıcısı", "SMTP testini kuyruğa al", "SMS/WhatsApp testini kuyruğa al", "PWA uygulama adı", "Harita Görünümü", "İçerik stüdyosu", "Tema Kütüphanesi"):
+                        assert leaked not in rendered, f"Turkish admin copy leaked in {locale}{route}: {leaked}"
         for route in ("/admin/requests", "/admin/appointments", "/admin/content", "/admin/media", "/admin/seo", "/admin/settings", "/admin/users", "/admin/jobs", "/admin/audit", "/admin/backup"):
             status, _, _, _ = self.admin.get(route)
             assert status == 200, f"admin {route}: {status}"
@@ -443,6 +526,9 @@ class Smoke:
     def run(self):
         self.check("14 locales, RTL, core pages and translation parity", self.locale_pages)
         self.check("XML sitemap and robots policy", self.sitemap)
+        self.check("versioned platform API modules, locations and search", self.platform_api)
+        self.check("authenticated platform REST form submission", self.platform_api_write)
+        self.check("SDK theme preview renders section manifest in all locales", self.theme_preview)
         self.check("private files and anonymous admin access", self.protected_storage)
         self.check("CSRF, invalid date, consent and MIME rejection", self.invalid_requests)
         self.check("quote and appointments persist pending with unique references", self.pending_requests)

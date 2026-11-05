@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
 require dirname(__DIR__).'/src/bootstrap.php';
-$name = trim((string)setting('pwa_name', setting('business_name', 'Kaş Nakliyat')));
-$description = trim((string)setting('pwa_description', setting('site_description', 'Nakliyat ve taşıma hizmetleri için hızlı teklif ve randevu platformu.')));
+$name = trim((string)setting('pwa_name', setting('business_name', 'TofiDesk')));
+$description = trim((string)setting('pwa_description', setting('site_description', 'Professional multilingual software and website platform.')));
 header('Content-Type: application/manifest+json; charset=utf-8');
 header('Cache-Control: public, max-age=300');
 echo json_encode([

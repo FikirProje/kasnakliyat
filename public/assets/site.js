@@ -33,13 +33,53 @@ document.querySelectorAll('[data-cookie-necessary]').forEach((button) => {
 document.querySelectorAll('form').forEach(form => form.addEventListener('submit', () => {
   if (form.checkValidity()) { const button = form.querySelector('button[type="submit"]'); if (button) { button.disabled = true; button.setAttribute('aria-busy','true'); } }
 }));
+// Location-aware discovery: visitors search by readable names; the stable
+// location id is submitted only after a suggestion is explicitly selected.
+document.querySelectorAll('[data-location-picker]').forEach((picker) => {
+  const query = picker.querySelector('[data-location-query]');
+  const id = picker.querySelector('[data-location-id]');
+  const list = picker.querySelector('[data-location-suggestions]');
+  if (!query || !id || !list) return;
+  let timer = 0;
+  let controller = null;
+  const close = () => { list.hidden = true; query.setAttribute('aria-expanded', 'false'); };
+  const render = (items) => {
+    list.replaceChildren();
+    for (const item of items) {
+      const option = document.createElement('button');
+      option.type = 'button'; option.className = 'location-suggestion'; option.setAttribute('role', 'option');
+      option.dataset.id = String(item.id);
+      option.innerHTML = `<strong>${escapeHtml(item.name)}</strong><small>${escapeHtml([item.level, item.country_code, item.postal_code].filter(Boolean).join(' · '))}</small>`;
+      option.addEventListener('click', () => { query.value = item.name; id.value = String(item.id); close(); query.focus(); });
+      list.append(option);
+    }
+    list.hidden = items.length === 0;
+    query.setAttribute('aria-expanded', String(items.length > 0));
+  };
+  const search = async () => {
+    const value = query.value.trim();
+    if (value.length < 2) { id.value = ''; close(); return; }
+    controller?.abort(); controller = new AbortController();
+    try {
+      const response = await fetch(`/api/platform/v1/locations/search?q=${encodeURIComponent(value)}&limit=12`, {headers:{Accept:'application/json'}, signal:controller.signal});
+      if (!response.ok) throw new Error('location');
+      render((await response.json()).items || []);
+    } catch (error) { if (error.name !== 'AbortError') close(); }
+  };
+  query.addEventListener('input', () => { id.value = ''; clearTimeout(timer); timer = setTimeout(search, 180); });
+  query.addEventListener('focus', () => { if (query.value.trim().length >= 2) search(); });
+  document.addEventListener('click', (event) => { if (!picker.contains(event.target)) close(); });
+});
+function escapeHtml(value) {
+  const div = document.createElement('div'); div.textContent = String(value ?? ''); return div.innerHTML;
+}
 // No map provider is contacted until the visitor explicitly opens the map.
 document.querySelectorAll('[data-map-url]').forEach(button => {
   button.addEventListener('click', () => {
     const map = document.getElementById(button.getAttribute('aria-controls'));
     if (!map || map.hasAttribute('src')) return;
     const url = button.getAttribute('data-map-url');
-    if (!url || !url.startsWith('https://www.google.com/maps?')) return;
+    if (!url || !/^https:\/\/(?:www\.google\.com\/maps\?|www\.openstreetmap\.org\/|www\.bing\.com\/maps\?)/.test(url)) return;
     map.setAttribute('src', url);
     map.hidden = false;
     const placeholder = button.closest('.map-placeholder');

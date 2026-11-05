@@ -15,6 +15,12 @@ import urllib.request
 
 ROOT = Path(__file__).resolve().parents[1]
 PHP = os.environ.get("PHP_BIN") or shutil.which("php") or "/workspace/.runtime/bin/php"
+PHP_FLAGS = ["-d", "display_startup_errors=0", "-d", "display_errors=0"]
+if os.name == "nt":
+    for extension in ("php_sqlite3.dll", "php_pdo_sqlite.dll", "php_gd.dll"):
+        extension_path = Path(PHP).resolve().parent / "ext" / extension
+        if extension_path.is_file():
+            PHP_FLAGS += ["-d", f"extension={extension_path}"]
 PHP_COMMAND = [os.environ.get("COMSPEC", "cmd.exe"), "/c", PHP] if os.name == "nt" and PHP.lower().endswith(".cmd") else [PHP]
 
 with tempfile.TemporaryDirectory(prefix="kas-gallery-") as temporary:
@@ -34,10 +40,11 @@ query('UPDATE media_translations SET alt=?,caption=? WHERE media_id=? AND lang=?
 query('INSERT INTO users(name,email,password_hash,role) VALUES(?,?,?,?)',['Editor','editor@example.test',password_hash('gallery-test-password',PASSWORD_DEFAULT),'editor']);
 echo $id;
 """
-    seeded = subprocess.run(PHP_COMMAND, input=seed, text=True, cwd=ROOT, env=env, capture_output=True, timeout=30)
+    seeded = subprocess.run(PHP_COMMAND + PHP_FLAGS, input=seed, text=True, encoding="utf-8", cwd=ROOT, env=env, capture_output=True, timeout=30)
     assert seeded.returncode == 0, seeded.stderr
     media_id = int(seeded.stdout.strip())
-    server = subprocess.Popen(PHP_COMMAND + ["-S", f"127.0.0.1:{port}", "-t", "public", "public/index.php"], cwd=ROOT, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    server_log = (work / "server.log").open("w+")
+    server = subprocess.Popen(PHP_COMMAND + PHP_FLAGS + ["-S", f"127.0.0.1:{port}", "-t", "public", "public/index.php"], cwd=ROOT, env=env, stdout=subprocess.DEVNULL, stderr=server_log)
     try:
         for _ in range(60):
             try:
@@ -64,7 +71,13 @@ echo $id;
         assert f"/media/{media_id}?variant=webp" in page and "data-gallery-more" in page
         home = urllib.request.urlopen(base + "/tr/", timeout=5).read().decode()
         assert "gallery-preview" in home and f"/media/{media_id}?variant=webp" in home
-        payload = json.loads(urllib.request.urlopen(base + "/api/gallery?lang=tr&offset=0", timeout=5).read())
+        api_response = urllib.request.urlopen(base + "/api/gallery?lang=tr&offset=0", timeout=5)
+        api_body = api_response.read().decode()
+        assert api_response.headers.get_content_type() == "application/json", f"gallery API content type: {api_response.headers.get_content_type()} body={api_body[:500]}"
+        if not api_body:
+            server_log.flush()
+            raise AssertionError(f"gallery API returned an empty JSON body; server log={server_log.read()}")
+        payload = json.loads(api_body)
         assert payload["items"][0]["alt"] == "Gerçek ofis hazırlığı"
         assert payload["items"][0]["caption"] == "Galeri testi"
         assert payload["items"][0]["src"] == f"/media/{media_id}?variant=webp"
@@ -77,3 +90,4 @@ echo $id;
             server.wait(timeout=5)
         except subprocess.TimeoutExpired:
             server.kill()
+        server_log.close()

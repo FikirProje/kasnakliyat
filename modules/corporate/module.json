@@ -1,0 +1,18 @@
+{
+  "slug": "corporate-pack",
+  "name": "Corporate and agency pack",
+  "version": "1.0.0",
+  "kind": "sector",
+  "requires": {"tofidesk": ">=1.0.0", "php": ">=8.2"},
+  "content_types": ["company_profile", "team_member", "case_study", "career"],
+  "taxonomies": ["industry", "department", "office_location"],
+  "fields": {"company_profile": [{"slug":"legal_name","label":"Legal name","field_type":"text"},{"slug":"address","label":"Address","field_type":"location"}],"team_member": [{"slug":"job_title","label":"Job title","field_type":"text"}],"career": [{"slug":"location","label":"Location","field_type":"location"},{"slug":"apply_url","label":"Application URL","field_type":"url"}]},
+  "hooks": ["content.saved", "search.reindex", "application.created"],
+  "permissions": ["company.manage", "team.manage", "career.manage"],
+  "translations": ["tr", "en", "de", "fr", "es", "it", "pt", "nl", "ru", "ar", "fa", "zh", "ja", "ko"],
+  "license": "commercial",
+  "settings": {
+    "approval_workflow": {"label": "Approval workflow", "description": "Review ownership and publishing stages for corporate content.", "default": {"stages": ["draft", "review", "approved", "published"]}},
+    "office_directory": {"label": "Office directory", "description": "Filter teams and offices by global location.", "default": {"facets": ["industry", "department", "location"]}}
+  }
+}

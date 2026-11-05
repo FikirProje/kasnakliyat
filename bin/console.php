@@ -37,7 +37,9 @@ try {
         if (!totp_valid($secret, $code)) throw new RuntimeException('Verification failed. Existing 2FA unchanged.');
         query('UPDATE users SET totp_secret=? WHERE id=?', [$secret,$user['id']]); audit('user.2fa.enabled.cli',(string)$user['id']); echo "Two-factor authentication enabled.\n";
     } elseif ($command === 'worker') {
-        echo json_encode(['ai'=>process_ai_jobs(3),'mail'=>send_mail_queue(10),'notifications'=>send_notification_queue(10)], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . "\n";
+        echo json_encode(['ai'=>process_ai_jobs(3),'mail'=>send_mail_queue(10),'notifications'=>send_notification_queue(10),'platform'=>platform_process_queue(10)], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . "\n";
+    } elseif ($command === 'maintenance') {
+        echo json_encode(platform_maintenance((int)($options['limit'] ?? 10)), JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . "\n";
     } elseif ($command === 'backup') { echo create_backup() . "\n"; }
     elseif ($command === 'check') {
         foreach (['pdo_sqlite','mbstring','fileinfo','curl','openssl','gd','zlib'] as $extension) if (!extension_loaded($extension)) throw new RuntimeException('Missing extension: '.$extension);
@@ -45,6 +47,6 @@ try {
         echo 'PHP '.PHP_VERSION.'; database version '.$version.'; '.count(locales())." locales; storage writable: ".(is_writable(storage_path())?'yes':'no')."\n";
         echo 'AI credential: '.(envv('AI_API_KEY')!==''?'configured':'not configured')."; SMTP host: ".(envv('SMTP_HOST')!==''?'configured':'not configured')."\n";
     } else {
-        echo "Kaş Nakliyat\n  migrate\n  check\n  user:create --email=you@example.com --name=Name --role=admin\n  user:password --email=you@example.com\n  user:2fa --email=you@example.com\n  worker\n  backup\n";
+        echo "TofiDesk CMS\n  migrate\n  check\n  user:create --email=you@example.com --name=Name --role=admin\n  user:password --email=you@example.com\n  user:2fa --email=you@example.com\n  worker\n  maintenance --limit=10\n  backup\n";
     }
 } catch (Throwable $error) { fwrite(STDERR, $error->getMessage() . "\n"); exit(1); }

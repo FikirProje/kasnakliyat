@@ -1,0 +1,21 @@
+{
+  "slug": "nexa-business",
+  "name": "Nexa Business",
+  "version": "1.0.0",
+  "parent": null,
+  "kind": "theme",
+  "license": "TofiDesk Theme License",
+  "translations": ["tr","en","de","fr","es","it","pt","ru","ar","fa","nl","zh","ja","ko"],
+  "requirements": {"php": ">=8.2", "platform": ">=1.0.0"},
+  "tokens": {"color_primary":"#0d2e42","color_accent":"#ff9149","color_surface":"#f2f4f2","font_family":"system-ui","radius":"8px","container":"1216px"},
+  "sections": [
+    {"slug":"header","component":"sections/header","editable":true,"supports":["logo","navigation","language_switcher"]},
+    {"slug":"hero","component":"sections/hero","editable":true,"supports":["eyebrow","title","description","actions","media"]},
+    {"slug":"feature_grid","component":"sections/feature-grid","editable":true,"supports":["items","icons","links"]},
+    {"slug":"content","component":"sections/content","editable":true,"supports":["rich_text","media"]},
+    {"slug":"testimonials","component":"sections/testimonials","editable":true,"supports":["items","rating"]},
+    {"slug":"cta","component":"sections/cta","editable":true,"supports":["title","description","action"]},
+    {"slug":"footer","component":"sections/footer","editable":true,"supports":["columns","legal","social"]}
+  ],
+  "demo": {"pages":["home","about","services","blog","contact"],"content_types":["page","post","product"]}
+}

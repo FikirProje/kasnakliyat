@@ -1,0 +1,30 @@
+{
+  "slug": "real-estate-pack",
+  "name": "Real estate pack",
+  "version": "1.0.0",
+  "kind": "sector",
+  "requires": {"tofidesk": ">=1.0.0", "php": ">=8.2"},
+  "content_types": ["listing", "agent", "office"],
+  "taxonomies": ["property_type", "amenity"],
+  "fields": {
+    "listing": [
+      {"slug": "bedrooms", "label": "Bedrooms", "field_type": "number", "config": {"min": 0}},
+      {"slug": "bathrooms", "label": "Bathrooms", "field_type": "number", "config": {"min": 0}},
+      {"slug": "property_type", "label": "Property type", "field_type": "text"},
+      {"slug": "price", "label": "Price", "field_type": "number", "config": {"min": 0}},
+      {"slug": "location", "label": "Location", "field_type": "location"}
+    ],
+    "agent": [
+      {"slug": "phone", "label": "Phone", "field_type": "text"},
+      {"slug": "photo", "label": "Photo", "field_type": "media"}
+    ]
+  },
+  "hooks": ["content.saved", "search.reindex"],
+  "permissions": ["listing.manage", "agent.manage"],
+  "translations": ["tr", "en", "de", "fr", "es", "it", "pt", "nl", "ru", "ar", "fa", "zh", "ja", "ko"],
+  "license": "commercial",
+  "settings": {
+    "listing_workflow": {"label": "İlan akışı", "description": "İlan onay ve yayın durumları.", "default": {"stages": ["draft", "review", "published"]}},
+    "property_search": {"label": "İlan araması", "description": "İlan filtreleri ve konum davranışı.", "default": {"facets": ["property_type", "amenity", "location"], "radius": true}}
+  }
+}

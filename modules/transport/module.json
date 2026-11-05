@@ -1,0 +1,34 @@
+{
+  "slug": "transport-pack",
+  "name": "Transport and logistics pack",
+  "version": "1.0.0",
+  "kind": "sector",
+  "requires": {"tofidesk": ">=1.0.0", "php": ">=8.2"},
+  "content_types": ["shipment", "fleet", "quote_request"],
+  "taxonomies": ["vehicle_type", "service_area"],
+  "fields": {
+    "shipment": [
+      {"slug": "origin", "label": "Origin", "field_type": "location"},
+      {"slug": "destination", "label": "Destination", "field_type": "location"},
+      {"slug": "cargo_type", "label": "Cargo type", "field_type": "text"},
+      {"slug": "weight", "label": "Weight", "field_type": "number", "config": {"min": 0}},
+      {"slug": "delivery_date", "label": "Delivery date", "field_type": "date"}
+    ],
+    "fleet": [
+      {"slug": "vehicle_type", "label": "Vehicle type", "field_type": "text"},
+      {"slug": "capacity", "label": "Capacity", "field_type": "number", "config": {"min": 0}}
+    ],
+    "quote_request": [
+      {"slug": "contact_email", "label": "Contact email", "field_type": "text"},
+      {"slug": "phone", "label": "Phone", "field_type": "text"}
+    ]
+  },
+  "hooks": ["content.saved", "search.reindex"],
+  "permissions": ["shipment.manage", "quote.manage"],
+  "translations": ["tr", "en", "de", "fr", "es", "it", "pt", "nl", "ru", "ar", "fa", "zh", "ja", "ko"],
+  "license": "commercial",
+  "settings": {
+    "quote_workflow": {"label": "Teklif akışı", "description": "Teklif formu ve operasyon aşamalarının JSON ayarı.", "default": {"stages": ["new", "review", "quoted", "won"]}},
+    "service_area_mode": {"label": "Hizmet alanı modu", "description": "İl/ilçe/mahalle seçim davranışı.", "default": {"levels": ["country", "city", "district", "neighborhood"]}}
+  }
+}

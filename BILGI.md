@@ -1,14 +1,14 @@
-# Transport CMS — satış teslim bilgisi
+# TofiDesk Global Platform — satış teslim bilgisi
 
 ## Hazır dosya
 
-Generic satış paketi komutla üretilir:
+Sektör bağımsız satış paketi komutla üretilir:
 
 ```sh
 python3 bin/package.py --profile marketplace --output=transport-cms-marketplace.zip
 ```
 
-Bu profil müşteri verisi, `.env`, veritabanı, medya, oturum, yedek, Kaş görselleri ve marka referanslarını dışarıda bırakır veya nötrleştirir. Kaş Nakliyat canlı sürümü için `--profile deployment` kullanılır.
+Bu profil müşteri verisi, `.env`, veritabanı, medya, oturum, yedek, Kas Nakliyat görselleri ve marka referanslarını dışarıda bırakır veya nötrleştirir. Kas Nakliyat demo/canlı sürümü için `--profile deployment` kullanılır.
 
 ## Doğrulanmış özellikler
 

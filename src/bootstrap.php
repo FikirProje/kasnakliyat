@@ -13,6 +13,31 @@ if (is_file(ROOT . '/.env')) {
     }
 }
 function envv(string $key, string $default = ''): string { $v = getenv($key); return $v === false || $v === '' ? $default : $v; }
+function product_profile(): array {
+    static $profile;
+    if (is_array($profile)) return $profile;
+    $profile = [
+        'name' => envv('PRODUCT_BRAND', ''),
+        'industry' => envv('PRODUCT_INDUSTRY', 'business software and digital products'),
+        'market' => envv('PRODUCT_MARKET', 'global'),
+        'location' => envv('PRODUCT_LOCATION', ''),
+    ];
+    $siteConfig = is_file(ROOT.'/config/site.php') ? require ROOT.'/config/site.php' : [];
+    if (is_array($siteConfig)) {
+        if ($profile['name'] === '' && !empty($siteConfig['business_name'])) $profile['name'] = (string)$siteConfig['business_name'];
+        if (!empty($siteConfig['product_industry'])) $profile['industry'] = (string)$siteConfig['product_industry'];
+        if ($profile['location'] === '' && !empty($siteConfig['product_location'])) $profile['location'] = (string)$siteConfig['product_location'];
+    }
+    // The generic marketplace package intentionally ships without the demo
+    // config. Once the installer has created settings, use the installed
+    // brand/location as the product profile for AI, manifests and exports.
+    if (function_exists('setting')) {
+        if ($profile['name'] === '') $profile['name'] = setting('business_name', '');
+        if ($profile['location'] === '') $profile['location'] = setting('location_label', '');
+        if ($profile['industry'] === 'business software and digital products') $profile['industry'] = setting('product_industry', $profile['industry']);
+    }
+    return $profile;
+}
 date_default_timezone_set(envv('APP_TIMEZONE', 'Europe/Istanbul'));
 function storage_path(string $sub = ''): string {
     $base = envv('STORAGE_PATH', ROOT . '/storage');
@@ -36,7 +61,7 @@ function csp_nonce(): string {
 if (PHP_SAPI !== 'cli') {
     ini_set('session.use_strict_mode', '1');
     session_save_path(storage_path('sessions'));
-    session_name('kas_session');
+    session_name(preg_replace('/[^a-zA-Z0-9_-]/', '_', envv('SESSION_NAME', 'tofidesk_session')) ?: 'tofidesk_session');
     session_set_cookie_params(['lifetime' => 0, 'path' => '/', 'secure' => str_starts_with(app_origin(), 'https://'), 'httponly' => true, 'samesite' => 'Lax']);
     session_start();
     header('X-Content-Type-Options: nosniff');
@@ -81,10 +106,15 @@ function render_error(int $status, string $message): never {
     http_response_code($status);
     header('Content-Type: text/html; charset=utf-8');
     $lang = request_lang(); $direction = function_exists('locale_direction') ? locale_direction($lang) : 'ltr';
-    $brand = function_exists('setting') ? setting('business_name', 'Transport CMS') : 'Transport CMS';
+    $brand = function_exists('setting') ? setting('business_name', 'TofiDesk') : 'TofiDesk';
     echo '<!doctype html><html lang="' . $lang . '" dir="' . $direction . '"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>' . e($brand) . '</title><link rel="stylesheet" href="/assets/site.css"><body><main class="narrow section"><h1>' . $status . '</h1><p>' . e($message) . '</p><a href="/' . $lang . '/">' . e($brand) . '</a></main></body></html>'; exit;
 }
-foreach (['I18n', 'InstallerI18n', 'AdminI18n', 'CountryProfiles', 'Integrations', 'InboundMail', 'License', 'PaymentSignatures', 'UpdateClient', 'PublicSite', 'Admin', 'Installer'] as $module) {
+foreach (['I18n', 'InstallerI18n', 'AdminI18n', 'AccountMailI18n', 'CountryProfiles', 'Platform', 'PlatformApi', 'ModuleManager', 'ThemeManager', 'ThemeRenderer', 'Integrations', 'InboundMail', 'License', 'PaymentSignatures', 'UpdateClient', 'PublicSite', 'Admin', 'Installer'] as $module) {
     $file = __DIR__ . '/' . $module . '.php';
     if (is_file($file)) require_once $file;
 }
+// Bundled sector packs and approved plugin manifests are data-only and idempotent.
+// Package code is never executed merely because a plugin manifest exists.
+if (function_exists('platform_sync_bundled_modules') && db()->query("SELECT 1 FROM sqlite_master WHERE type='table' AND name='platform_modules'")->fetchColumn()) platform_sync_bundled_modules();
+if (function_exists('platform_adapter_sync_catalog') && db()->query("SELECT 1 FROM sqlite_master WHERE type='table' AND name='platform_adapters'")->fetchColumn()) platform_adapter_sync_catalog();
+if (function_exists('platform_sync_permission_catalog')) platform_sync_permission_catalog();

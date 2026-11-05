@@ -1439,6 +1439,31 @@ JSON, true, 512, JSON_THROW_ON_ERROR);
     return $catalog;
 }
 
+function generic_public_text(string $value, string $lang): string
+{
+    // The marketplace archive has no customer profile yet. Keep its starter
+    // public site industry-neutral; an installed customer profile disables
+    // this overlay and uses the customer's own sector copy.
+    $maps = [
+        'tr'=>['Kaş'=>'işletmeniz','KAŞ'=>'İŞLETMENİZ','nakliyat'=>'yazılım','Nakliyat'=>'Yazılım','nakliye'=>'ürün','Nakliye'=>'Ürün','taşıma'=>'dijital ürün','Taşıma'=>'Dijital ürün','yük'=>'proje','Yük'=>'Proje','kargo'=>'ürün','Kargo'=>'Ürün','güzergâh'=>'iş akışı','Güzergâh'=>'İş akışı','randevu'=>'talep','Randevu'=>'Talep','teklif'=>'plan','Teklif'=>'Plan'],
+        'en'=>['Kaş'=>'your business','KAŞ'=>'YOUR BUSINESS','transport'=>'software','Transport'=>'Software','cargo'=>'digital product','Cargo'=>'Digital product','moving'=>'business','Moving'=>'Business','logistics'=>'digital operations','Logistics'=>'Digital operations','freight'=>'product','Freight'=>'Product','shipment'=>'delivery','Shipment'=>'Delivery','route'=>'workflow','Route'=>'Workflow','quote'=>'plan','Quote'=>'Plan','appointment'=>'request','Appointment'=>'Request'],
+        'de'=>['Kaş'=>'Ihr Unternehmen','KAŞ'=>'IHR UNTERNEHMEN','Transport'=>'Software','transport'=>'Software','Fracht'=>'Produkt','fracht'=>'Produkt','Umzug'=>'Geschäft','umzug'=>'Geschäft','Logistik'=>'digitale Abläufe','logistik'=>'digitale Abläufe','Lieferung'=>'Bereitstellung','lieferung'=>'Bereitstellung','Angebot'=>'Plan','angebot'=>'Plan','Termin'=>'Anfrage','termin'=>'Anfrage'],
+        'fr'=>['Kaş'=>'votre entreprise','KAŞ'=>'VOTRE ENTREPRISE','transport'=>'logiciel','Transport'=>'Logiciel','chargement'=>'produit','Chargement'=>'Produit','déménagement'=>'activité','Déménagement'=>'Activité','logistique'=>'opérations numériques','Logistique'=>'Opérations numériques','livraison'=>'déploiement','Livraison'=>'Déploiement','devis'=>'plan','Devis'=>'Plan','rendez-vous'=>'demande','Rendez-vous'=>'Demande'],
+        'es'=>['Kaş'=>'su empresa','KAŞ'=>'SU EMPRESA','transporte'=>'software','Transporte'=>'Software','carga'=>'producto','Carga'=>'Producto','mudanza'=>'negocio','Mudanza'=>'Negocio','logística'=>'operaciones digitales','Logística'=>'Operaciones digitales','entrega'=>'distribución','Entrega'=>'Distribución','presupuesto'=>'plan','Presupuesto'=>'Plan','cita'=>'solicitud','Cita'=>'Solicitud'],
+        'it'=>['Kaş'=>'la tua attività','KAŞ'=>'LA TUA ATTIVITÀ','trasporto'=>'software','Trasporto'=>'Software','carico'=>'prodotto','Carico'=>'Prodotto','trasloco'=>'attività','Trasloco'=>'Attività','logistica'=>'operazioni digitali','Logistica'=>'Operazioni digitali','consegna'=>'distribuzione','Consegna'=>'Distribuzione','preventivo'=>'piano','Preventivo'=>'Piano','appuntamento'=>'richiesta','Appuntamento'=>'Richiesta'],
+        'pt'=>['Kaş'=>'a sua empresa','KAŞ'=>'A SUA EMPRESA','transporte'=>'software','Transporte'=>'Software','carga'=>'produto','Carga'=>'Produto','mudança'=>'negócio','Mudança'=>'Negócio','logística'=>'operações digitais','Logística'=>'Operações digitais','entrega'=>'distribuição','Entrega'=>'Distribuição','orçamento'=>'plano','Orçamento'=>'Plano','marcação'=>'pedido','Marcação'=>'Pedido'],
+        'nl'=>['Kaş'=>'uw bedrijf','KAŞ'=>'UW BEDRIJF','transport'=>'software','Transport'=>'Software','vracht'=>'product','Vracht'=>'Product','verhuizing'=>'bedrijf','Verhuizing'=>'Bedrijf','logistiek'=>'digitale processen','Logistiek'=>'Digitale processen','levering'=>'distributie','Levering'=>'Distributie','offerte'=>'plan','Offerte'=>'Plan','afspraak'=>'aanvraag','Afspraak'=>'Aanvraag'],
+        'ru'=>['Kaş'=>'ваша компания','KAŞ'=>'ВАША КОМПАНИЯ','транспорт'=>'программное обеспечение','Транспорт'=>'Программное обеспечение','груз'=>'продукт','Груз'=>'Продукт','перевоз'=>'бизнес','Перевоз'=>'Бизнес','логист'=>'цифровые операции','Логист'=>'Цифровые операции','достав'=>'распространение','Достав'=>'Распространение','запрос цен'=>'план','встреч'=>'запрос','Встреч'=>'Запрос'],
+        'ar'=>['Kaş'=>'عملك','KAŞ'=>'عملك','النقل'=>'البرمجيات','نقل'=>'البرمجيات','الشحن'=>'المنتج','شحن'=>'المنتج','اللوجستيات'=>'العمليات الرقمية','لوجستيات'=>'العمليات الرقمية','التسليم'=>'التوزيع','تسليم'=>'التوزيع','عرض السعر'=>'الخطة','موعد'=>'طلب'],
+        'fa'=>['Kaş'=>'کسب‌وکار شما','KAŞ'=>'کسب‌وکار شما','حمل‌ونقل'=>'نرم‌افزار','حمل و نقل'=>'نرم‌افزار','بار'=>'محصول','حمل'=>'محصول','لجستیک'=>'عملیات دیجیتال','تحویل'=>'توزیع','پیشنهاد قیمت'=>'طرح','قرار'=>'درخواست'],
+        'zh'=>['Kaş'=>'您的企业','KAŞ'=>'您的企业','运输'=>'软件','货物'=>'产品','物流'=>'数字运营','配送'=>'分发','报价'=>'方案','预约'=>'请求'],
+        'ja'=>['Kaş'=>'あなたのビジネス','KAŞ'=>'あなたのビジネス','輸送'=>'ソフトウェア','貨物'=>'製品','物流'=>'デジタル運用','配送'=>'配布','見積'=>'プラン','予約'=>'リクエスト'],
+        'ko'=>['Kaş'=>'귀사의 비즈니스','KAŞ'=>'귀사의 비즈니스','운송'=>'소프트웨어','화물'=>'제품','물류'=>'디지털 운영','배송'=>'배포','견적'=>'플랜','예약'=>'요청'],
+    ];
+    foreach ($maps[$lang] ?? $maps['en'] as $source => $replacement) $value = str_replace($source, $replacement, $value);
+    return $value;
+}
+
 function t(string $key, string $lang): string
 {
     $catalog = translation_catalog();
@@ -1462,5 +1487,8 @@ function t(string $key, string $lang): string
             }
         } catch (Throwable) { }
     }
-    return $catalog[$lang][$key] ?? $catalog['tr'][$key] ?? $key;
+    $value = $catalog[$lang][$key] ?? $catalog['tr'][$key] ?? $key;
+    $profile = function_exists('product_profile') ? product_profile() : [];
+    if (trim((string)($profile['name'] ?? '')) === '' && trim((string)($profile['location'] ?? '')) === '') return generic_public_text((string)$value, $lang);
+    return (string)$value;
 }

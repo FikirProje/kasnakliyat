@@ -10,6 +10,7 @@ foreach (['AI_API_KEY', 'SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASSWORD', 
     putenv($name . '=');
 }
 require dirname(__DIR__) . '/src/bootstrap.php';
+migrate();
 $passed = 0;
 $failed = false;
 function integration_check(bool $condition, string $message): void
@@ -21,6 +22,19 @@ function integration_check(bool $condition, string $message): void
     $passed++;
     echo 'PASS ' . $message . PHP_EOL;
 }
+
+query("INSERT OR REPLACE INTO platform_modules(slug,name,version,kind,manifest_json,status,source) VALUES(?,?,?,?,?,'enabled','test')", [
+    'ai-context-fixture', 'AI context fixture', '1.0.0', 'sector',
+    json_encode(['content_types'=>['listing','service'], 'taxonomies'=>['industry']], JSON_THROW_ON_ERROR),
+]);
+
+integration_check(
+    str_contains(ai_editorial_context(['kind' => 'article'], ['industry' => 'business software and digital products', 'market' => 'global']), 'Do not introduce transport')
+        && str_contains(ai_editorial_context(['kind' => 'service'], ['industry' => 'creative tools', 'market' => 'global']), 'service or product capability page')
+        && str_contains(ai_editorial_context(['kind' => 'article'], ['industry' => 'creative tools', 'market' => 'global']), 'AI context fixture [listing, service]'),
+    'AI editorial context is sector-neutral, content-type aware and module-aware'
+);
+
 function integration_rejects(callable $action, string $message): void
 {
     try {

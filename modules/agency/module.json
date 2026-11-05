@@ -1,0 +1,18 @@
+{
+  "slug": "agency-pack",
+  "name": "Agency and creative studio pack",
+  "version": "1.0.0",
+  "kind": "sector",
+  "requires": {"tofidesk": ">=1.0.0", "php": ">=8.2"},
+  "content_types": ["agency_profile", "service", "portfolio_item", "client"],
+  "taxonomies": ["service_category", "industry", "deliverable"],
+  "fields": {"agency_profile": [{"slug":"website","label":"Website","field_type":"url"},{"slug":"logo","label":"Logo","field_type":"media"}],"service": [{"slug":"price_from","label":"Starting price","field_type":"number"}],"portfolio_item": [{"slug":"client","label":"Client","field_type":"text"},{"slug":"project_url","label":"Project URL","field_type":"url"}]},
+  "hooks": ["content.saved", "search.reindex", "content.published"],
+  "permissions": ["agency.manage", "portfolio.manage", "client.manage"],
+  "translations": ["tr", "en", "de", "fr", "es", "it", "pt", "nl", "ru", "ar", "fa", "zh", "ja", "ko"],
+  "license": "commercial",
+  "settings": {
+    "lead_workflow": {"label": "Lead workflow", "description": "Inquiry qualification and proposal stages.", "default": {"stages": ["new", "qualified", "proposal", "won"]}},
+    "portfolio_visibility": {"label": "Portfolio visibility", "description": "Controls public case-study and client references.", "default": {"show_client_names": false, "show_results": true}}
+  }
+}

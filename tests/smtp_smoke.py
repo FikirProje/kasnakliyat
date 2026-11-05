@@ -21,6 +21,11 @@ def main(disconnect_on_quit=False):
     php = os.environ.get("PHP_BIN") or shutil.which("php")
     if not php:
         raise RuntimeError("PHP is required; activate the documented PHP runtime first.")
+    php_flags = ["-d", "display_startup_errors=0", "-d", "display_errors=0"]
+    if os.name == "nt":
+        for extension in ("php_sqlite3.dll", "php_pdo_sqlite.dll"):
+            path = Path(php).resolve().parent / "ext" / extension
+            if path.is_file(): php_flags += ["-d", f"extension={path}"]
     received = []
     errors = []
     listener = socket.socket()
@@ -79,7 +84,7 @@ echo json_encode(['counts'=>$counts,'mail'=>$mail],JSON_THROW_ON_ERROR);
 """, encoding="utf-8")
         environment = dict(os.environ)
         environment.update(STORAGE_PATH=str(directory / "storage"), DB_PATH=str(directory / "app.sqlite"), APP_ENV="testing", AI_API_KEY="", SMTP_HOST="127.0.0.1", SMTP_PORT=str(port), SMTP_USER="", SMTP_PASSWORD="", SMTP_FROM="sender@example.test")
-        result = subprocess.run([php, str(script), str(root)], env=environment, capture_output=True, text=True, timeout=30)
+        result = subprocess.run([php, *php_flags, str(script), str(root)], env=environment, capture_output=True, text=True, timeout=30)
         if result.returncode:
             raise RuntimeError("PHP SMTP check failed; inspect the isolated application's error handling.")
         outcome = json.loads(result.stdout)

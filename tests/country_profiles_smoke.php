@@ -2,7 +2,9 @@
 declare(strict_types=1);
 
 $root = dirname(__DIR__);
-require $root . '/src/bootstrap.php';
+// This is a pure market-matrix contract; do not require the application
+// bootstrap or a database extension just to validate country defaults.
+require $root . '/src/CountryProfiles.php';
 
 $profiles = country_profiles();
 if (count($profiles) !== 195) throw new RuntimeException('Expected exactly 195 market profiles.');

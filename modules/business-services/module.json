@@ -1,0 +1,18 @@
+{
+  "slug": "business-services-pack",
+  "name": "Business services pack",
+  "version": "1.0.0",
+  "kind": "sector",
+  "requires": {"tofidesk": ">=1.0.0", "php": ">=8.2"},
+  "content_types": ["service", "team_member", "case_study"],
+  "taxonomies": ["service_category", "industry"],
+  "fields": {"service": [{"slug":"price_from","label":"Starting price","field_type":"number"},{"slug":"delivery_days","label":"Delivery days","field_type":"number"}],"team_member": [{"slug":"role","label":"Role","field_type":"text"},{"slug":"photo","label":"Photo","field_type":"media"}],"case_study": [{"slug":"client_industry","label":"Client industry","field_type":"text"}]},
+  "hooks": ["content.saved", "search.reindex"],
+  "permissions": ["service.manage", "case_study.manage"],
+  "translations": ["tr", "en", "de", "fr", "es", "it", "pt", "nl", "ru", "ar", "fa", "zh", "ja", "ko"],
+  "license": "commercial",
+  "settings": {
+    "lead_workflow": {"label": "Müşteri adayı akışı", "description": "Hizmet talebi ve ekip atama aşamaları.", "default": {"stages": ["new", "qualified", "proposal", "won"]}},
+    "directory_filters": {"label": "Dizin filtreleri", "description": "Hizmet ve sektör filtreleri.", "default": {"facets": ["service_category", "industry", "location"]}}
+  }
+}

@@ -32,21 +32,33 @@ def restore(archive: Path, storage: Path, database: Path):
         manifest = json.loads((work / "manifest.json").read_text())
         if manifest.get("format") != 1 or manifest.get("environment_secret_files_included") is not False:
             raise ValueError("Unsupported backup manifest.")
-        actual = {str(p.relative_to(work)): hashlib.sha256(p.read_bytes()).hexdigest()
+        actual = {str(p.relative_to(work)).replace('\\', '/'): hashlib.sha256(p.read_bytes()).hexdigest()
                   for p in work.rglob("*") if p.is_file() and p.name != "manifest.json"}
-        if actual != manifest["sha256"] or "app.sqlite" not in actual:
-            raise ValueError("Backup checksum or member-set mismatch.")
-        with sqlite3.connect(f"file:{work / 'app.sqlite'}?mode=ro", uri=True) as connection:
+        expected = manifest["sha256"]
+        if actual != expected or "app.sqlite" not in actual:
+            missing = sorted(set(expected) - set(actual))[:5]
+            extra = sorted(set(actual) - set(expected))[:5]
+            changed = sorted(name for name in set(actual) & set(expected) if actual[name] != expected[name])[:5]
+            raise ValueError(f"Backup checksum or member-set mismatch (missing={missing}, extra={extra}, changed={changed}).")
+        connection = sqlite3.connect(f"file:{work / 'app.sqlite'}?mode=ro", uri=True)
+        try:
             if connection.execute("PRAGMA integrity_check").fetchone()[0] != "ok":
                 raise ValueError("Backup database integrity check failed.")
             if not connection.execute("SELECT version FROM migrations WHERE version=3").fetchone():
                 raise ValueError("Backup does not have the expected database schema.")
+        finally:
+            connection.close()
         # An additional recovery copy survives both success and failure.
         recovery = storage / "backups" / ("pre-restore-" + str(time.time_ns()))
         recovery.mkdir(parents=True, mode=0o700)
         if database.exists():
-            with sqlite3.connect(database) as source, sqlite3.connect(recovery / "app.sqlite") as target:
+            source = sqlite3.connect(database)
+            target = sqlite3.connect(recovery / "app.sqlite")
+            try:
                 source.backup(target)
+            finally:
+                target.close()
+                source.close()
         if (storage / "media").exists():
             shutil.copytree(storage / "media", recovery / "media", symlinks=False)
         database.parent.mkdir(parents=True, exist_ok=True)

@@ -1,0 +1,16 @@
+{
+  "slug": "nexa-business-child",
+  "name": "Nexa Business Child",
+  "version": "1.0.0",
+  "parent": "nexa-business",
+  "kind": "theme",
+  "license": "TofiDesk Theme License",
+  "translations": ["tr", "en", "de", "fr", "es", "it", "pt", "ru", "ar", "fa", "nl", "zh", "ja", "ko"],
+  "requirements": {"php": ">=8.2", "platform": ">=1.0.0"},
+  "tokens": {"color_accent":"#126e82","radius":"12px"},
+  "sections": [
+    {"slug":"hero","component":"sections/hero-child","editable":true,"supports":["eyebrow","title","description","actions","media"],"overrides":{"title":"A sector-ready digital presence"}},
+    {"slug":"footer","component":"sections/footer-child","editable":true,"supports":["columns","legal","social"]}
+  ],
+  "demo": {"pages":["home","about","services","blog","contact"],"content_types":["page","post","product"]}
+}

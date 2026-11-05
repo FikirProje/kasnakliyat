@@ -1,0 +1,18 @@
+{
+  "slug": "hospitality-pack",
+  "name": "Hospitality and restaurant pack",
+  "version": "1.0.0",
+  "kind": "sector",
+  "requires": {"tofidesk": ">=1.0.0", "php": ">=8.2"},
+  "content_types": ["venue", "menu_item", "room", "offer"],
+  "taxonomies": ["cuisine", "amenity", "service_area"],
+  "fields": {"venue": [{"slug":"address","label":"Address","field_type":"location"},{"slug":"rating","label":"Rating","field_type":"number"}],"room": [{"slug":"capacity","label":"Capacity","field_type":"number"},{"slug":"nightly_price","label":"Nightly price","field_type":"number"}],"offer": [{"slug":"valid_until","label":"Valid until","field_type":"date"}]},
+  "hooks": ["content.saved", "search.reindex", "booking.created"],
+  "permissions": ["venue.manage", "menu.manage", "booking.manage"],
+  "translations": ["tr", "en", "de", "fr", "es", "it", "pt", "nl", "ru", "ar", "fa", "zh", "ja", "ko"],
+  "license": "commercial",
+  "settings": {
+    "availability": {"label": "Availability", "description": "Opening hours, blackout dates and capacity rules.", "default": {"timezone": "UTC", "capacity": 1}},
+    "menu_display": {"label": "Menu display", "description": "Localized menus, allergens and dietary labels.", "default": {"show_allergens": true}}
+  }
+}

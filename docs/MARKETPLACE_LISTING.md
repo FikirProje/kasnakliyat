@@ -2,21 +2,21 @@
 
 ## Product name
 
-Transport CMS — Multilingual Logistics & Moving Business Website
+TofiDesk CMS — Multilingual Website, Software & Theme Platform
 
 ## Short description
 
-Self-hosted PHP website and operations panel for moving, logistics and transport businesses. Includes multilingual public pages, quote and appointment workflow, content management, media gallery, SEO metadata, SMTP queue and optional IMAP inbox collection.
+Self-hosted PHP website and operations platform for agencies, creators and businesses in any industry. Includes multilingual public pages, configurable workflows, content management, media gallery, SEO metadata, SMTP queue and optional IMAP inbox collection.
 
 ## Feature highlights
 
 - 14 public languages, including Arabic and Persian RTL layouts
 - Multilingual first-run installer and 195-country profile matrix
-- Quote, appointment, customer-media and staff workflow
-- Content, service, blog, gallery and SEO management
+- Configurable forms, appointments, customer-media and staff workflow
+- Content, service, blog, gallery and SEO management for any industry
 - Open Graph, X Cards, Schema.org, sitemap, canonical and hreflang
 - SMTP delivery queue, customer replies and optional TLS IMAP collection
-- Generic marketplace ZIP that excludes customer data and credentials
+- Generic marketplace ZIP that excludes demo customer data and credentials
 
 ## Requirements
 

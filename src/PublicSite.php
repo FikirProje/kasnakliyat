@@ -53,12 +53,14 @@ function public_gallery_json(string $lang): never {
     $items=public_gallery_items($lang,$offset,12);
     $payload=['items'=>array_map(static fn($item)=>['id'=>(int)$item['id'],'src'=>'/media/'.(int)$item['media_id'].'?variant=webp','alt'=>(string)$item['alt'],'caption'=>(string)$item['caption'],'width'=>(int)$item['width'],'height'=>(int)$item['height']],$items),'next_offset'=>count($items)===12?$offset+12:null];
     header('Content-Type: application/json; charset=utf-8'); header('Cache-Control: public, max-age=300');
-    echo json_encode($payload,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES); exit;
+    // Media metadata can originate from legacy uploads; never let one invalid
+    // byte turn the public API into a successful response with an empty body.
+    echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE); exit;
 }
 function public_routes_for_sitemap(): array {
     $routes = [];
     foreach (array_keys(locales()) as $lang) {
-        foreach ([''=>'home','hizmetler/yuk-tasimaciligi/'=>'service','blog/'=>'blog','galeri/'=>'gallery','teklif-al/'=>'quote','randevu/'=>'appointment','gizlilik/'=>'privacy','kullanim-sartlari/'=>'terms','destek-sla/'=>'sla'] as $tail=>$group) {
+        foreach ([''=>'home','hizmetler/yuk-tasimaciligi/'=>'service','blog/'=>'blog','arama/'=>'search','galeri/'=>'gallery','teklif-al/'=>'quote','randevu/'=>'appointment','gizlilik/'=>'privacy','kullanim-sartlari/'=>'terms','destek-sla/'=>'sla'] as $tail=>$group) {
             if ($group==='service' && row('SELECT t.id FROM translations t JOIN articles a ON a.id=t.article_id WHERE t.lang=? AND t.slug=? AND a.kind=? AND '.public_visible_sql(),[$lang,'yuk-tasimaciligi','service'])) continue;
             $routes[] = ['path'=>"/$lang/$tail",'lang'=>$lang,'group'=>$group];
         }
@@ -99,8 +101,8 @@ function public_request(string $lang, string $kind): array {
         }
     } catch (Throwable $error) { return [t('error_upload',$lang)]; }
     $reference = 'KN-'.strtoupper(bin2hex(random_bytes(5)));
-    $q = db()->prepare('INSERT INTO requests(reference,type,name,email,phone,origin,destination,cargo,preferred_date,slot,notes,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,\'new\',datetime(\'now\'),datetime(\'now\'))');
-    $q->execute([$reference,$kind,$fields['name'],$fields['email'],$fields['phone'],$fields['origin'],$fields['destination'],$fields['cargo'],$fields['preferred_date'],$fields['slot'],$fields['notes']]);
+    $q = db()->prepare('INSERT INTO requests(reference,type,name,email,phone,origin,destination,cargo,preferred_date,slot,notes,lang,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,\'new\',datetime(\'now\'),datetime(\'now\'))');
+    $q->execute([$reference,$kind,$fields['name'],$fields['email'],$fields['phone'],$fields['origin'],$fields['destination'],$fields['cargo'],$fields['preferred_date'],$fields['slot'],$fields['notes'],$lang]);
     $requestId = (int)db()->lastInsertId();
     if ($mediaId) { $q=db()->prepare('INSERT INTO request_media(request_id,media_id) VALUES(?,?)'); $q->execute([$requestId,$mediaId]); }
     if (filter_var(setting('contact_email'),FILTER_VALIDATE_EMAIL) && setting($kind==='quote'?'notify_request_created':'notify_appointment_created','1')==='1') {
@@ -121,6 +123,8 @@ function handle_public(string $path): void {
     $lang=$matches[1]; $tail=trim($matches[2] ?? '','/'); $page='home'; $article=null; $errors=[];
     $root='/'.$lang.'/';
     if ($tail==='blog') $page='blog';
+    elseif ($tail==='arama' || $tail==='search') $page='search';
+    elseif ($tail==='tema-onizleme' || $tail==='theme-preview') $page='theme-preview';
     elseif ($tail==='galeri') $page='gallery';
     elseif ($tail==='teklif-al') $page='quote';
     elseif ($tail==='randevu') $page='appointment';
@@ -151,11 +155,31 @@ function handle_public(string $path): void {
         if ($errors) http_response_code(422);
     }
     $galleryLabels=gallery_labels($lang);
-    $titleKeys=['home'=>'hero_title','service'=>'service_title','blog'=>'blog_title','quote'=>'quote_title','appointment'=>'appointment_title','privacy'=>'privacy_title','terms'=>'terms_title','sla'=>'sla_title','404'=>'not_found'];
+    $titleKeys=['home'=>'hero_title','service'=>'service_title','blog'=>'blog_title','quote'=>'quote_title','appointment'=>'appointment_title','privacy'=>'privacy_title','terms'=>'terms_title','sla'=>'sla_title','search'=>'hero_title','theme-preview'=>'hero_title','404'=>'not_found'];
     $title=$article ? ($article['seo_title'] ?: $article['title']) : ($page==='gallery' ? $galleryLabels[0] : ($page==='home' ? (setting('homepage_title_'.$lang) ?: t('hero_title',$lang)) : t($titleKeys[$page] ?? 'hero_title',$lang)));
-    $descriptionKeys=['home'=>'hero_text','service'=>'service_intro','blog'=>'blog_intro','quote'=>'quote_intro','appointment'=>'appointment_intro','privacy'=>'privacy_text','terms'=>'terms_text','sla'=>'sla_text','404'=>'not_found_text'];
+    $descriptionKeys=['home'=>'hero_text','service'=>'service_intro','blog'=>'blog_intro','quote'=>'quote_intro','appointment'=>'appointment_intro','privacy'=>'privacy_text','terms'=>'terms_text','sla'=>'sla_text','search'=>'hero_text','theme-preview'=>'hero_text','404'=>'not_found_text'];
+    $searchLabels=[]; foreach (['title','intro','query','type','all','location','radius','sort','updated','title_sort','submit','results','empty'] as $key) $searchLabels[$key]=platform_search_labels($key,$lang);
     $description=$article ? ($article['seo_description'] ?: $article['excerpt']) : ($page==='gallery' ? $galleryLabels[1] : ($page==='home' ? (setting('homepage_intro_'.$lang) ?: t('hero_text',$lang)) : t($descriptionKeys[$page] ?? 'hero_text',$lang)));
     $heroTitle=$page==='home' ? (setting('homepage_title_'.$lang) ?: t('hero_title',$lang)) : $title;
+    $searchResult=['items'=>[],'total'=>0,'facets'=>[]];
+    if ($page==='search') {
+        $locationId = isset($_GET['location_id']) ? (int)$_GET['location_id'] : 0;
+        $locationQuery = is_string($_GET['location_query'] ?? null) ? trim((string)$_GET['location_query']) : '';
+        // Progressive enhancement: resolve an exact readable location name
+        // server-side when JavaScript is unavailable. Never guess a fuzzy
+        // match silently; the visitor must enter an exact name or select a
+        // suggestion that supplies the stable id.
+        if ($locationId <= 0 && $locationQuery !== '' && mb_strlen($locationQuery) <= 120) {
+            foreach (platform_location_search($locationQuery, '', 20) as $candidate) {
+                if (mb_strtolower(trim((string)$candidate['name'])) === mb_strtolower($locationQuery) || mb_strtolower(trim((string)$candidate['slug'])) === mb_strtolower($locationQuery)) {
+                    $locationId = (int)$candidate['id'];
+                    break;
+                }
+            }
+        }
+        $searchResult=platform_search_advanced(['locale'=>$lang,'term'=>is_string($_GET['q']??null)?(string)$_GET['q']:'','types'=>is_string($_GET['types']??null)?array_values(array_filter(explode(',',(string)$_GET['types']))):[],'location_id'=>$locationId>0?$locationId:null,'include_descendants'=>($_GET['include_descendants']??'')==='1','radius_km'=>is_numeric($_GET['radius_km']??null)?(float)$_GET['radius_km']:0,'sort'=>is_string($_GET['sort']??null)?(string)$_GET['sort']:'updated','limit'=>24]);
+    }
+    $themePreviewSlug = (string)($_GET['theme'] ?? 'nexa-business');
     if ($page==='home') {
         $title=setting('homepage_seo_title_'.$lang) ?: $title;
         $description=setting('homepage_seo_description_'.$lang) ?: $description;

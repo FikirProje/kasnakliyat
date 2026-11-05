@@ -1,8 +1,8 @@
-# Global Transport CMS requirements
+# Global TofiDesk marketplace requirements
 
 ## Product promise
 
-The product must support a transport business in every built-in locale without assuming a Turkish company, Turkish address, Kaş, a specific currency, or a supplied brand asset.
+The marketplace must support software, themes and add-ons for every industry in every built-in locale without assuming a Turkish company, Turkish address, Kaş, a specific currency, or a supplied brand asset.
 
 ## Language model
 

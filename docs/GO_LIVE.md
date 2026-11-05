@@ -20,7 +20,7 @@ YANDEX_VERIFICATION=
 FACEBOOK_DOMAIN_VERIFICATION=
 ```
 
-Google and Pinterest verification are also available in the administration settings. After publishing, submit `https://your-domain.example/sitemap.xml` to Google Search Console, Bing Webmaster Tools and Yandex Webmaster. Verify Open Graph previews with each social platform's official debugger after DNS and HTTPS are live.
+Google, Bing, Yandex and Pinterest verification are available in the administration settings. After publishing, submit `https://your-domain.example/sitemap.xml` to Google Search Console, Bing Webmaster Tools and Yandex Webmaster. Verify Open Graph previews with each social platform's official debugger after DNS and HTTPS are live.
 
 ## Production checks
 

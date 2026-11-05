@@ -3,6 +3,8 @@ DirectoryIndex index.php
 RewriteEngine On
 RewriteRule ^(?:storage|bin|docs|tests|work)(?:/|$) - [F,L]
 RewriteRule ^install$ public/installer.php [L]
+RewriteRule ^sitemap\.xml$ public/seo.php?resource=sitemap [L,QSA]
+RewriteRule ^robots\.txt$ public/seo.php?resource=robots [L,QSA]
 RewriteRule ^assets(/.*)?$ public/$0 [L]
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d

@@ -1,0 +1,17 @@
+{
+  "slug": "content-discovery",
+  "name": "Content discovery plugin",
+  "version": "1.0.0",
+  "kind": "plugin",
+  "requires": {"tofidesk": ">=1.0.0", "php": ">=8.2"},
+  "content_types": [],
+  "taxonomies": [],
+  "hooks": ["search.reindex"],
+  "permissions": ["search.manage"],
+  "translations": ["tr", "en", "de", "fr", "es", "it", "pt", "nl", "ru", "ar", "fa", "zh", "ja", "ko"],
+  "license": "commercial",
+  "settings": {
+    "ranking": {"label": "Discovery ranking", "description": "Controls the default ranking policy for content and products.", "default": {"mode": "relevance_then_updated"}},
+    "suggestions": {"label": "Search suggestions", "description": "Enables safe, locale-aware query suggestions.", "default": {"enabled": true}}
+  }
+}

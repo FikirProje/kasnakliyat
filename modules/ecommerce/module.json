@@ -1,0 +1,18 @@
+{
+  "slug": "ecommerce-pack",
+  "name": "E-commerce pack",
+  "version": "1.0.0",
+  "kind": "sector",
+  "requires": {"tofidesk": ">=1.0.0", "php": ">=8.2"},
+  "content_types": ["product", "collection", "brand"],
+  "taxonomies": ["product_category", "product_tag", "brand"],
+  "fields": {"product": [{"slug":"sku","label":"SKU","field_type":"text"},{"slug":"price","label":"Price","field_type":"number"},{"slug":"stock","label":"Stock","field_type":"number"},{"slug":"gallery","label":"Gallery","field_type":"media"}],"collection": [{"slug":"banner","label":"Banner","field_type":"media"}]},
+  "hooks": ["content.saved", "search.reindex", "order.paid"],
+  "permissions": ["product.manage", "catalog.manage", "order.manage"],
+  "translations": ["tr", "en", "de", "fr", "es", "it", "pt", "nl", "ru", "ar", "fa", "zh", "ja", "ko"],
+  "license": "commercial",
+  "settings": {
+    "catalog_mode": {"label": "Catalog mode", "description": "Controls inventory, variants and purchase visibility.", "default": {"inventory": true, "variants": true}},
+    "product_search": {"label": "Product search", "description": "Locale-aware catalogue facets and ordering.", "default": {"facets": ["product_category", "brand", "price", "location"]}}
+  }
+}

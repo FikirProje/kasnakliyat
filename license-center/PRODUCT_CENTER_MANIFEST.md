@@ -20,6 +20,18 @@ Bu klasör yalnızca `product.tofidesk.com` için kullanılır.
 - `public/.htaccess` — rewrite bağımsız public kuralları
 - `public/assets/` — demo tema görselleri
 - `bin/release.php` — imzalı release yayınlama aracı
+- `bin/seed-first-party-theme.php` — ilk taraf data-only tema manifestini güvenli ZIP, SHA-256 ve imzalı theme release olarak yayınlama aracı
 - `bin/package.py` — product center paketleme aracı
+
+İlk tema release örneği:
+
+```text
+LICENSE_PACKAGE_SIGNING_KEY="sunucuda-özel-uzun-rastgele-anahtar" \
+php bin/seed-first-party-theme.php --db=/var/lib/tofidesk/licenses.sqlite \
+  --preview-video=https://cdn.example.com/nexa-business-preview.mp4
+```
+
+Video URL’si verilirse ürün kalite kapısına `video` varlığı eklenir. İmza
+anahtarı yoksa komut yayın yapmaz; ürün yanlışlıkla satışa hazır görünmez.
 
 Bu pakette `src/`, `templates/` veya `config/site.php` bulunmaz. Bunlar ana CMS/demo paketine aittir.

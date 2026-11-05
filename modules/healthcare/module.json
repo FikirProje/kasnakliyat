@@ -1,0 +1,18 @@
+{
+  "slug": "healthcare-pack",
+  "name": "Healthcare pack",
+  "version": "1.0.0",
+  "kind": "sector",
+  "requires": {"tofidesk": ">=1.0.0", "php": ">=8.2"},
+  "content_types": ["provider", "treatment", "facility"],
+  "taxonomies": ["specialty", "insurance", "service_area"],
+  "fields": {"provider": [{"slug":"specialty","label":"Specialty","field_type":"text"},{"slug":"phone","label":"Phone","field_type":"text"}],"treatment": [{"slug":"duration","label":"Duration","field_type":"number"}],"facility": [{"slug":"address","label":"Address","field_type":"location"}]},
+  "hooks": ["content.saved", "search.reindex"],
+  "permissions": ["provider.manage", "treatment.manage"],
+  "translations": ["tr", "en", "de", "fr", "es", "it", "pt", "nl", "ru", "ar", "fa", "zh", "ja", "ko"],
+  "license": "commercial",
+  "settings": {
+    "directory_workflow": {"label": "Provider directory workflow", "description": "Review and publication stages for providers and facilities.", "default": {"stages": ["draft", "review", "published"]}},
+    "privacy_mode": {"label": "Privacy mode", "description": "Controls public contact and appointment fields.", "default": {"show_private_fields": false}}
+  }
+}

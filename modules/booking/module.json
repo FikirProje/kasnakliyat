@@ -1,0 +1,18 @@
+{
+  "slug": "booking-pack",
+  "name": "Booking and appointments pack",
+  "version": "1.0.0",
+  "kind": "sector",
+  "requires": {"tofidesk": ">=1.0.0", "php": ">=8.2"},
+  "content_types": ["appointment", "resource", "staff_member", "availability"],
+  "taxonomies": ["appointment_type", "service_area"],
+  "fields": {"appointment": [{"slug":"start_at","label":"Start time","field_type":"datetime"},{"slug":"duration","label":"Duration","field_type":"number"}],"resource": [{"slug":"capacity","label":"Capacity","field_type":"number"}],"availability": [{"slug":"schedule","label":"Schedule","field_type":"json"}]},
+  "hooks": ["content.saved", "search.reindex", "booking.created"],
+  "permissions": ["appointment.manage", "availability.manage", "resource.manage"],
+  "translations": ["tr", "en", "de", "fr", "es", "it", "pt", "nl", "ru", "ar", "fa", "zh", "ja", "ko"],
+  "license": "commercial",
+  "settings": {
+    "booking_rules": {"label": "Booking rules", "description": "Slot duration, lead time and conflict policy.", "default": {"slot_minutes": 30, "lead_hours": 2, "prevent_conflicts": true}},
+    "location_mode": {"label": "Location mode", "description": "Online, on-site or mixed appointment locations.", "default": {"modes": ["online", "onsite"]}}
+  }
+}

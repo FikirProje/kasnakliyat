@@ -8,4 +8,6 @@ return [
     'whatsapp' => '+905052194346',
     'address' => 'Bayındır Mh. Ağalar Sk. No:25 Kaş / Antalya',
     'setup_admin_email' => 'info@kasnakliyat.com',
+    'product_industry' => 'cargo transport and logistics',
+    'product_location' => 'Kaş, Türkiye',
 ];

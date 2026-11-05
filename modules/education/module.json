@@ -1,0 +1,18 @@
+{
+  "slug": "education-pack",
+  "name": "Education pack",
+  "version": "1.0.0",
+  "kind": "sector",
+  "requires": {"tofidesk": ">=1.0.0", "php": ">=8.2"},
+  "content_types": ["course", "instructor", "lesson", "campus"],
+  "taxonomies": ["subject", "level", "delivery_mode"],
+  "fields": {"course": [{"slug":"duration","label":"Duration","field_type":"number"},{"slug":"price","label":"Price","field_type":"number"}],"instructor": [{"slug":"photo","label":"Photo","field_type":"media"}],"campus": [{"slug":"address","label":"Address","field_type":"location"}]},
+  "hooks": ["content.saved", "search.reindex", "enrollment.created"],
+  "permissions": ["course.manage", "lesson.manage", "enrollment.manage"],
+  "translations": ["tr", "en", "de", "fr", "es", "it", "pt", "nl", "ru", "ar", "fa", "zh", "ja", "ko"],
+  "license": "commercial",
+  "settings": {
+    "course_workflow": {"label": "Course workflow", "description": "Draft, review, scheduled and published course states.", "default": {"stages": ["draft", "review", "published"]}},
+    "access_policy": {"label": "Access policy", "description": "Public, members-only or licensed course access.", "default": {"mode": "public"}}
+  }
+}

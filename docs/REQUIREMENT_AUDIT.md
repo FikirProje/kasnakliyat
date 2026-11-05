@@ -23,10 +23,14 @@ checks remain deployment responsibilities.
 
 Evidence:
 
-- tests/smoke.py: 17/17 groups passed with SQLite/GD enabled.
-- tests/integrations.php: 31/31 assertions passed.
-- tests/smtp_smoke.py, tests/release_audit.py and
-  tests/license_center_smoke.py: passed.
+- `tests/smoke.py` has a 17-group SQLite/GD-enabled target run documented in
+  the historical test log. The current Windows CLI does not have PDO SQLite
+  and does not run the local HTTP fixture, so those runtime groups are not
+  re-certified in this environment.
+- `tests/integrations.php`, `tests/release_audit.py` and
+  `tests/license_center_smoke.py` are the local contract evidence; the
+  database-backed integration set must be rerun under the target Plesk PHP-FPM
+  runtime.
 
 ## Must be configured and verified before live sales
 

@@ -11,9 +11,15 @@ import subprocess
 import sys
 import tarfile
 import tempfile
+from contextlib import closing
 
 ROOT = Path(__file__).resolve().parents[1]
 PHP = os.environ.get("PHP_BIN") or shutil.which("php") or "/workspace/.runtime/bin/php"
+PHP_FLAGS = ["-d", "display_startup_errors=0", "-d", "display_errors=0"]
+if os.name == "nt":
+    for extension in ("php_sqlite3.dll", "php_pdo_sqlite.dll"):
+        path = Path(PHP).resolve().parent / "ext" / extension
+        if path.is_file(): PHP_FLAGS += ["-d", f"extension={path}"]
 
 
 with tempfile.TemporaryDirectory(prefix="kas-restore-test-") as temporary:
@@ -23,25 +29,28 @@ with tempfile.TemporaryDirectory(prefix="kas-restore-test-") as temporary:
     env.update(STORAGE_PATH=str(storage), DB_PATH=str(database))
 
     def run(args, expected=0):
-        result = subprocess.run(args, env=env, cwd=ROOT, text=True, capture_output=True, timeout=30)
+        command = [args[0], *PHP_FLAGS, *args[1:]] if args and args[0] == PHP else args
+        result = subprocess.run(command, env=env, cwd=ROOT, text=True, capture_output=True, timeout=30)
         assert result.returncode == expected, result.stderr
         return result.stdout
 
     run([PHP, "bin/console.php", "migrate"])
-    with sqlite3.connect(database) as conn:
+    with closing(sqlite3.connect(database)) as conn:
         conn.execute("INSERT INTO settings(key,value) VALUES('restore_marker','original')")
+        conn.commit()
     (storage / "media/originals/marker.txt").write_text("original media")
     backup = Path(run([PHP, "bin/console.php", "backup"]).strip())
-    with sqlite3.connect(database) as conn:
+    with closing(sqlite3.connect(database)) as conn:
         conn.execute("UPDATE settings SET value='changed' WHERE key='restore_marker'")
+        conn.commit()
     (storage / "media/originals/marker.txt").write_text("changed media")
     run([sys.executable, "bin/restore.py", "--archive=" + str(backup)], expected=2)
     run([sys.executable, "bin/restore.py", "--archive=" + str(backup), "--maintenance-confirmed"])
-    with sqlite3.connect(database) as conn:
+    with closing(sqlite3.connect(database)) as conn:
         assert conn.execute("SELECT value FROM settings WHERE key='restore_marker'").fetchone()[0] == "original"
     assert (storage / "media/originals/marker.txt").read_text() == "original media"
     recovery = next((storage / "backups").glob("pre-restore-*"))
-    with sqlite3.connect(recovery / "app.sqlite") as conn:
+    with closing(sqlite3.connect(recovery / "app.sqlite")) as conn:
         assert conn.execute("SELECT value FROM settings WHERE key='restore_marker'").fetchone()[0] == "changed"
     assert (recovery / "media/originals/marker.txt").read_text() == "changed media"
     print("PASS: data/media round-trip; pre-restore recovery copy; maintenance prerequisite")

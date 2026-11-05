@@ -1,0 +1,8 @@
+/* Accessibility and long-navigation overrides. Keep the sidebar independently scrollable. */
+.sidebar nav {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+.sidebar nav a { flex-shrink: 0; }

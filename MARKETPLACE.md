@@ -1,6 +1,6 @@
 # Marketplace release checklist
 
-This repository is the neutral TofiDesk transport CMS release profile. Customer-specific branding belongs in a separate deployment profile and must not be included in the marketplace archive.
+This repository is the neutral TofiDesk global software and theme marketplace release profile. Customer-specific branding belongs in a separate deployment profile and must not be included in the marketplace archive.
 
 ## Do not ship customer material
 

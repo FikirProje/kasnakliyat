@@ -1,5 +1,12 @@
 <?php
 declare(strict_types=1);
+// Safe deployment marker: it contains no secrets and lets a hosting check
+// prove which package is actually serving the request.
+$tofideskRelease = (string)(getenv('APP_VERSION') ?: '2026.11.05-platform');
+if (!headers_sent()) {
+    header('X-TofiDesk-Product: cms');
+    header('X-TofiDesk-Release: ' . preg_replace('/[^A-Za-z0-9._-]/', '-', $tofideskRelease));
+}
 function tofidesk_startup_failure(string $message): never {
     if (!headers_sent()) {
         http_response_code(503);
@@ -69,13 +76,42 @@ try {
     if (!in_array($method, ['GET', 'HEAD', 'POST'], true)) { header('Allow: GET, HEAD, POST'); render_error(405, t('error_method', request_lang())); }
     if ($path === '/health') {
         header('Content-Type: application/json'); header('Cache-Control: no-store');
-        echo json_encode(['status' => 'ok', 'database' => query('SELECT 1')->fetchColumn() == 1]); exit;
+        echo json_encode([
+            'status' => 'ok',
+            'product' => 'cms',
+            'release' => $tofideskRelease,
+            'database' => query('SELECT 1')->fetchColumn() == 1,
+            'storage_writable' => is_writable(dirname(__DIR__) . '/storage'),
+            'installer_locked' => is_file(storage_path('installed.lock')),
+        ], JSON_UNESCAPED_SLASHES); exit;
     }
     if (preg_match('#^/api/gallery/?$#',$path)) {
         $lang=is_string($_GET['lang'] ?? null) ? $_GET['lang'] : 'tr';
         if (!isset(locales()[$lang])) render_error(404, 'Sayfa bulunamadı.');
         public_gallery_json($lang);
     }
+    if (preg_match('#^/api/search/?$#', $path)) {
+        $lang = is_string($_GET['lang'] ?? null) ? (string)$_GET['lang'] : request_lang();
+        $types = is_string($_GET['types'] ?? null) ? array_values(array_filter(explode(',', (string)$_GET['types']), static fn(string $v): bool => preg_match('/^[a-z0-9_-]{1,80}$/', $v))) : [];
+        $termIds = is_string($_GET['term_ids'] ?? null) ? array_values(array_filter(array_map('intval', explode(',', (string)$_GET['term_ids'])), static fn(int $v): bool => $v > 0)) : [];
+        if (!isset(core_locales()[$lang])) render_error(400, 'Geçersiz arama dili.');
+        $result = platform_search_advanced([
+            'locale' => $lang,
+            'term' => is_string($_GET['q'] ?? null) ? (string)$_GET['q'] : '',
+            'types' => $types,
+            'term_ids' => $termIds,
+            'location_id' => isset($_GET['location_id']) ? (int)$_GET['location_id'] : null,
+            'include_descendants' => ($_GET['include_descendants'] ?? '') === '1',
+            'latitude' => is_numeric($_GET['lat'] ?? null) ? (float)$_GET['lat'] : null,
+            'longitude' => is_numeric($_GET['lon'] ?? null) ? (float)$_GET['lon'] : null,
+            'radius_km' => is_numeric($_GET['radius_km'] ?? null) ? min(5000, max(0, (float)$_GET['radius_km'])) : 0,
+            'sort' => is_string($_GET['sort'] ?? null) ? (string)$_GET['sort'] : 'updated',
+            'limit' => isset($_GET['limit']) ? (int)$_GET['limit'] : 30,
+        ]);
+        header('Content-Type: application/json; charset=utf-8'); header('Cache-Control: public, max-age=60');
+        echo json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR); exit;
+    }
+    if (str_starts_with($path, '/api/platform/v1')) platform_api_handle($path);
     if ($path === '/robots.txt') {
         header('Content-Type: text/plain; charset=utf-8');
         if (envv('APP_ENV', 'development') !== 'production') echo "User-agent: *\nDisallow: /\n";

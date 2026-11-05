@@ -13,6 +13,6 @@ rg -n -i 'Kaş Nakliyat|kasnakliyat|Bayındır|505 219|bilgi@kas' /tmp/transport
 
 The asset and runtime-data exclusions work: the archive excludes `.env`, SQLite files, media, sessions, backups, customer config, supplied hero images and supplied logo files. Neutral logo and favicon placeholders are injected.
 
-The release is **not yet suitable for marketplace submission** because customer branding remains in source code and documentation, including the readme, installation guide, management interface, email subjects, seed content, brand generator and backup naming. A passing scan must return no customer identifiers outside an explicitly separated Kaş-only profile.
+The generic archive now passes the customer-identifier scan. Customer branding is removed or replaced in the marketplace profile, supplied customer media and runtime data are excluded, and neutral TofiDesk assets are injected. The Kaş Nakliyat deployment remains a separate branded profile.
 
-Do not remove this scan gate or market the generic ZIP as customer-neutral until it passes.
+Keep this scan as a release gate: run it against the exact ZIP before each marketplace publication.
