@@ -32,6 +32,8 @@ import xml.etree.ElementTree as ET
 ROOT = Path(__file__).resolve().parents[1]
 LOCALES = "tr en de fr es it pt nl ru ar zh ja ko fa".split()
 PHP = os.environ.get("PHP_BIN") or shutil.which("php") or "/workspace/.runtime/bin/php"
+if PHP and not Path(PHP).is_file():
+    PHP = shutil.which(PHP)
 PHP_FLAGS: list[str] = ["-d", "display_startup_errors=0", "-d", "display_errors=0"]
 if os.name == "nt":
     sqlite_extension = Path(PHP).resolve().parent / "ext" / "php_sqlite3.dll"
@@ -553,7 +555,7 @@ class Smoke:
 
 
 def main():
-    if not Path(PHP).is_file():
+    if not PHP or not Path(PHP).is_file():
         print("PHP executable missing. Set PHP_BIN.", file=sys.stderr)
         return 2
     with tempfile.TemporaryDirectory(prefix="kasnakliyat-smoke-", ignore_cleanup_errors=True) as directory:
